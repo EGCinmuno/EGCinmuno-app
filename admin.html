@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EGCinmuno — Panel de Administración</title>
+  <meta name="description" content="Panel de gestión para docentes: configurá casos, estudiantes y resultados del laboratorio virtual">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<div class="admin-page">
+
+  <!-- ═══ LOGIN ADMIN ═══ -->
+  <div id="admin-login">
+    <div class="admin-login-card">
+      <span class="admin-badge">🔐 Acceso Docente</span>
+      <h2 style="margin-bottom:0.25rem;">Panel de Administración</h2>
+      <p style="font-size:0.875rem;margin-bottom:1.75rem;">EGCinmuno · Laboratorio Virtual</p>
+
+      <form id="admin-login-form">
+        <div class="form-group">
+          <label for="admin-password">Contraseña de administrador</label>
+          <input
+            type="password"
+            id="admin-password"
+            placeholder="••••••••••••"
+            required
+            autocomplete="current-password"
+          >
+        </div>
+        <button type="submit" class="btn-admin-primary full-width">Ingresar</button>
+        <div class="login-error" id="login-error" style="margin-top:1rem;"></div>
+      </form>
+
+      <p style="text-align:center;margin-top:1.5rem;">
+        <a href="index.html" style="color:var(--primary-light);font-size:0.85rem;text-decoration:none;">
+          ← Volver al login de estudiantes
+        </a>
+      </p>
+    </div>
+  </div>
+
+  <!-- ═══ APP ADMIN ═══ -->
+  <div id="admin-app">
+
+    <!-- Header -->
+    <header class="admin-header">
+      <div class="admin-header-left">
+        <span style="font-size:1.4rem;filter:drop-shadow(0 0 8px rgba(139,92,246,0.6))">🔬</span>
+        <span class="admin-header-title">EGCinmuno · Panel Docente</span>
+      </div>
+      <div style="display:flex;gap:0.75rem;align-items:center;">
+        <a href="index.html" style="font-size:0.8rem;color:var(--text-muted);text-decoration:none;">
+          Ver como estudiante →
+        </a>
+        <button class="btn-logout" id="admin-logout">Cerrar sesión</button>
+      </div>
+    </header>
+
+    <!-- Body -->
+    <div class="admin-body">
+      <nav class="admin-sidebar">
+        <div id="admin-nav"></div>
+      </nav>
+      <div id="admin-content"></div>
+    </div>
+
+  </div>
+
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/admin.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EGCinmuno — Examen Práctico</title>
+  <meta name="description" content="Interfaz de examen práctico: solicitá estudios y obtené resultados de laboratorio para el caso asignado">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<header class="exam-header">
+  <div class="header-brand">
+    <span class="header-logo">🧬</span>
+    <span class="header-title">EGCinmuno · Laboratorio Virtual</span>
+  </div>
+  <div class="header-right">
+    <span class="header-student">
+      Sesión: <strong id="student-name">—</strong>
+    </span>
+    <div class="token-badge" id="token-badge">
+      🪙 <span id="token-count">—</span> tokens
+    </div>
+    <button class="btn-logout" id="logout-btn">Salir</button>
+  </div>
+</header>
+
+<!-- ═══ BODY ═══ -->
+<div class="exam-layout">
+  <div class="exam-body">
+
+    <!-- SIDEBAR: Casos clínicos -->
+    <aside class="cases-sidebar">
+      <p class="sidebar-title">📋 Casos clínicos disponibles</p>
+      <div id="case-list">
+        <p style="color:var(--text-muted);font-size:0.85rem;">Cargando casos...</p>
+      </div>
+    </aside>
+
+    <!-- MAIN: Panel de estudios -->
+    <main class="exam-main">
+
+      <!-- Sin caso seleccionado -->
+      <div class="no-case-msg" id="no-case-msg">
+        <span class="no-case-icon">🔬</span>
+        <p>Seleccioná un caso clínico de la izquierda<br>para comenzar a solicitar estudios.</p>
+      </div>
+
+      <!-- Panel activo (oculto hasta seleccionar caso) -->
+      <div class="study-panel" id="study-panel" style="display:none;">
+
+        <!-- Encabezado del caso -->
+        <div class="study-panel-header">
+          <span class="current-case-icon">📂</span>
+          <span id="current-case-name"></span>
+        </div>
+
+        <!-- Banner info del paciente (se llena dinámicamente al seleccionar caso) -->
+        <div class="case-info-banner" id="case-info-banner" style="display:none;"></div>
+
+        <!-- Barra de consulta libre -->
+        <div id="free-query-section"></div>
+
+        <!-- Separador modo guiado -->
+        <div class="guided-separator">
+          <span>— o usá el modo guiado —</span>
+        </div>
+
+        <!-- Tabs de tipos de estudio -->
+        <div class="study-tabs" id="study-tabs"></div>
+
+        <!-- Paneles de formulario por tipo -->
+        <div class="study-panels" id="study-panels"></div>
+
+        <!-- Historial de resultados -->
+        <div class="history-section">
+          <p class="history-title">📄 Resultados de esta sesión</p>
+          <p id="history-empty">Aún no solicitaste ningún estudio.</p>
+          <div id="history-list"></div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- ═══ PROCESSING OVERLAY ═══ -->
+<div class="processing-overlay" id="processing-overlay">
+  <div class="processing-spinner"></div>
+  <span class="processing-label" id="processing-label">Procesando...</span>
+</div>
+
+<!-- ═══ TOAST CONTAINER ═══ -->
+<div id="toast-container"></div>
+
+<script src="js/data.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/exam.js"></script>
+
+</body>
+</html>
