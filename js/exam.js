@@ -15,11 +15,30 @@ document.addEventListener("DOMContentLoaded", () => {
   if (!session) return;
   session = syncSession();
 
+  // Restaurar historial desde la sesión guardada
+  queryHistory = session.log.map(entry => {
+    const type = STUDY_TYPES.find(t => t.id === entry.typeId) || { id: "unknown", label: entry.studyType, color: "#666", icon: "📄" };
+    const subtype = type.subtypes ? type.subtypes.find(s => s.id === entry.subtypeId) : null;
+    return {
+      type,
+      subtype,
+      target: entry.target,
+      result: entry.resultText || "⚠️ Resultado de una sesión anterior (sin texto guardado).",
+      found: entry.resultFound,
+      tokensLeft: "—",
+      time: new Date(entry.timestamp),
+      caseId: entry.caseId
+    };
+  }).reverse();
+
   const data = getData();
   const queryMode = data.settings?.queryMode || "both";
 
   renderHeader();
   renderCaseSelector();
+  
+  // Renderizar el historial restaurado
+  if (queryHistory.length > 0) renderHistory();
 
   // Mostrar/ocultar secciones según el modo configurado
   if (queryMode !== "guided") renderFreeQueryBar();
@@ -101,8 +120,11 @@ function selectCase(c, cardEl) {
   const freeInput = document.getElementById("free-query-input");
   if (freeInput) {
     freeInput.disabled = false;
-    freeInput.placeholder = "Escribí aquí tu consulta en lenguaje libre... ej: 'quiero un western blot de BTK'";
+    freeInput.placeholder = "Escribí aquí tu consulta... ej: 'Motivo de la consulta'";
   }
+  
+  // Renderizar el historial cada vez que se cambia de caso (opcional, para mantener el contexto)
+  renderHistory();
 }
 
 function renderCaseInfoBanner(c) {
@@ -111,6 +133,15 @@ function renderCaseInfoBanner(c) {
   const p = c.patient;
   if (!p) { banner.style.display = "none"; return; }
   banner.style.display = "flex";
+  // Buscar descubrimientos para este caso
+  const discoveries = session.log
+    .filter(entry => entry.caseId === c.id && entry.resultFound)
+    .map(entry => `<strong>${entry.studyType}${entry.target ? ` (${entry.target})` : ''}:</strong> ${entry.resultText || '<em>(Información obtenida previamente)</em>'}`)
+    .join("<br><br>");
+
+  const descriptionHTML = c.description + 
+    (discoveries ? `<br><br><div class="discoveries-section" style="margin-top:1rem; padding-top:1rem; border-top:1px dashed rgba(255,255,255,0.2);"><strong>🔍 Información obtenida:</strong><br><br>${discoveries}</div>` : "");
+
   banner.innerHTML = `
     <div class="case-info-pill">
       <span class="cip-label">🧑‍⚕️ Edad</span>
@@ -122,7 +153,7 @@ function renderCaseInfoBanner(c) {
     </div>
     <div class="case-info-pill" style="flex:4">
       <span class="cip-label">📝 Descripción clínica</span>
-      <span class="cip-value">${c.description}</span>
+      <span class="cip-value">${descriptionHTML}</span>
     </div>
   `;
 }
@@ -216,7 +247,7 @@ function handleFreeQuery() {
           <span class="parse-value">${parsed.type.icon} ${parsed.type.label}${subtypeDisplay}</span>
         </div>
         ${hasTarget ? `<div class="parse-row">
-          <span class="parse-label">Target / Analito:</span>
+          <span class="parse-label">Consulta específica:</span>
           <span class="parse-value parse-target">${targetDisplay}</span>
         </div>` : ""}
         ${parsed.confidence === "low" ? `<p class="parse-warning">⚠️ Interpretación incierta. Si no es lo que querés, cancelá y reescribí.</p>` : ""}
@@ -384,15 +415,21 @@ function submitStudyDirect(type, subtype, target) {
   const resultFound = result !== null;
 
   showProcessing(type, subtype, target, () => {
+    const resultText = result || buildNotFoundText(type, subtype, target);
+    
     const { tokensLeft } = consumeToken(
       session.name, currentCase.id,
       type.label + (subtype ? ` › ${subtype.label}` : ""),
-      target, resultFound
+      target, resultFound, resultText, type.id, subtype?.id
     );
 
-    const resultText = result || buildNotFoundText(type, subtype, target);
     addToHistory(type, subtype, target, resultText, resultFound, tokensLeft);
     updateTokenBadge();
+    
+    // Actualizar la descripción del caso con la nueva info obtenida
+    if (resultFound) {
+      renderCaseInfoBanner(currentCase);
+    }
 
     if (tokensLeft === 0) showToast("⚠️ Usaste tu último token", "warning");
   });
@@ -443,7 +480,7 @@ function buildNotFoundText(type, subtype, target) {
 // ──────────────────────────────────────────────
 
 function addToHistory(type, subtype, target, result, found, tokensLeft) {
-  queryHistory.unshift({ type, subtype, target, result, found, tokensLeft, time: new Date() });
+  queryHistory.unshift({ type, subtype, target, result, found, tokensLeft, time: new Date(), caseId: currentCase.id });
   renderHistory();
 
   // Scroll al resultado
@@ -479,7 +516,7 @@ function renderHistory() {
         <pre class="result-text">${item.result}</pre>
       </div>
       <div class="result-footer">
-        <span class="result-case">${currentCase?.name || ""}</span>
+        <span class="result-case">${getData().cases.find(c => c.id === item.caseId)?.name || currentCase?.name || ""}</span>
         <span class="result-time">${formatTime(item.time)} · Tokens restantes: ${item.tokensLeft}</span>
       </div>`;
     container.appendChild(card);

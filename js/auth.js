@@ -93,7 +93,7 @@ function logoutAdmin() {
  * Registra la consulta en el log del estudiante.
  * @returns {{ success: boolean, tokensLeft: number }}
  */
-function consumeToken(studentName, caseId, studyType, target, resultFound) {
+function consumeToken(studentName, caseId, studyType, target, resultFound, resultText = "", typeId = "", subtypeId = "") {
   const data = getData();
   const idx = data.students.findIndex(s => normalize(s.name) === normalize(studentName));
 
@@ -106,7 +106,10 @@ function consumeToken(studentName, caseId, studyType, target, resultFound) {
     caseId,
     studyType,
     target,
-    resultFound
+    resultFound,
+    resultText,
+    typeId,
+    subtypeId
   });
 
   saveData(data);

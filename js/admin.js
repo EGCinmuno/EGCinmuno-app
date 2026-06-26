@@ -129,6 +129,7 @@ function renderStudentsTable(students, filter = "") {
       <td><span class="token-pill ${s.tokensLeft === 0 ? 'empty' : s.tokensLeft <= 2 ? 'low' : 'ok'}">${s.tokensLeft}/${TOKENS_PER_STUDENT}</span></td>
       <td>${s.log.length}</td>
       <td class="actions-cell">
+        <button class="btn-icon-sm" title="Editar tokens" onclick="editStudentTokens('${s.name}', ${s.tokensLeft})">✏️</button>
         <button class="btn-icon-sm" title="Resetear tokens" onclick="resetStudentTokens('${s.name}')">🔄</button>
         <button class="btn-icon-sm danger" title="Eliminar" onclick="deleteStudent('${s.name}')">🗑</button>
       </td>
@@ -137,6 +138,23 @@ function renderStudentsTable(students, filter = "") {
 }
 
 function filterStudents(val) { renderStudentsTable(getData().students, val); }
+
+function editStudentTokens(name, currentTokens) {
+  const newVal = prompt(`Ingrese la nueva cantidad de tokens para ${name}:`, currentTokens);
+  if (newVal === null || newVal.trim() === "") return;
+  const tokens = parseInt(newVal, 10);
+  if (isNaN(tokens) || tokens < 0) {
+    showAdminToast("Cantidad inválida", "error");
+    return;
+  }
+  const data = getData();
+  const idx = data.students.findIndex(s => normalize(s.name) === normalize(name));
+  if (idx === -1) return;
+  data.students[idx].tokensLeft = tokens;
+  saveData(data);
+  renderStudentsTable(data.students);
+  showAdminToast(`Tokens de ${name} actualizados a ${tokens}`);
+}
 
 function resetStudentTokens(name) {
   const data = getData();
@@ -291,15 +309,15 @@ function renderCasesList(cases) {
       </div>
       <div class="results-grid">
         ${Object.entries(c.results).length === 0
-          ? `<p class="empty-msg">Sin resultados. Agregá el primero.</p>`
-          : Object.entries(c.results).map(([key, val]) => {
-              const parts = key.split("::");
-              const typeId = parts[0];
-              const typeObj = STUDY_TYPES.find(t => t.id === typeId);
-              const displayKey = parts.length === 3
-                ? `${parts[1]} › ${parts[2]}`
-                : parts.slice(1).join(" › ");
-              return `
+        ? `<p class="empty-msg">Sin resultados. Agregá el primero.</p>`
+        : Object.entries(c.results).map(([key, val]) => {
+          const parts = key.split("::");
+          const typeId = parts[0];
+          const typeObj = STUDY_TYPES.find(t => t.id === typeId);
+          const displayKey = parts.length === 3
+            ? `${parts[1]} › ${parts[2]}`
+            : parts.slice(1).join(" › ");
+          return `
               <div class="result-admin-item">
                 <div class="result-admin-key">
                   <span class="result-type-badge">${typeObj ? typeObj.icon + " " + typeObj.label : typeId}</span>
@@ -311,7 +329,7 @@ function renderCasesList(cases) {
                   <button class="btn-icon-sm danger" onclick="deleteResult('${c.id}', '${key}')">🗑</button>
                 </div>
               </div>`;
-            }).join("")}
+        }).join("")}
       </div>
     </div>`;
   }).join("") || `<p class="empty-msg">No hay casos. Creá el primero.</p>`;
@@ -656,8 +674,8 @@ function renderLogTab(container) {
         <button class="btn-admin-secondary" onclick="exportLog()">📥 Exportar CSV</button>
       </div>
       ${allLogs.length === 0
-        ? `<p class="empty-msg">No hay consultas registradas aún.</p>`
-        : `<table class="admin-table">
+      ? `<p class="empty-msg">No hay consultas registradas aún.</p>`
+      : `<table class="admin-table">
             <thead><tr><th>Fecha/Hora</th><th>Estudiante</th><th>Caso</th><th>Tipo</th><th>Target</th><th>Resultado</th></tr></thead>
             <tbody>${allLogs.map(e => `
               <tr>

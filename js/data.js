@@ -3,7 +3,7 @@
  */
 
 const ADMIN_PASSWORD = "egcinmuno2026";
-const TOKENS_PER_STUDENT = 5;
+const TOKENS_PER_STUDENT = 10;
 
 // ──────────────────────────────────────────────
 // TIPOS DE ESTUDIO
@@ -17,7 +17,7 @@ const STUDY_TYPES = [
     color: "#64748b",
     description: "Datos generales, edad, género, inicio de síntomas",
     placeholder: "Ej: edad y género, inicio de síntomas, historia clínica...",
-    keywords: ["informacion", "información", "paciente", "edad", "genero", "género", "sexo", "datos", "ficha", "inicio", "sintoma", "síntoma", "comienzo", "cuando", "cuándo", "historia clinica", "hc"]
+    keywords: ["informacion", "información", "paciente", "edad", "genero", "género", "sexo", "datos", "ficha", "inicio", "sintoma", "síntoma", "comienzo", "cuando", "cuándo", "historia clinica", "hc", "motivo", "consulta", "infeccion", "infecciones"]
   },
   {
     id: "antecedentes",
@@ -147,17 +147,18 @@ const DEFAULT_DATA = {
   },
 
   students: [
-    { name: "Ana García",       email: "ana.garcia@ejemplo.com",      tokensLeft: TOKENS_PER_STUDENT, log: [] },
-    { name: "Carlos López",     email: "carlos.lopez@ejemplo.com",    tokensLeft: TOKENS_PER_STUDENT, log: [] },
-    { name: "María Fernández",  email: "maria.fernandez@ejemplo.com", tokensLeft: TOKENS_PER_STUDENT, log: [] },
-    { name: "Estudiante Demo",  email: "demo@demo.com",               tokensLeft: TOKENS_PER_STUDENT, log: [] },
+    { name: "Ana García", email: "ana.garcia@ejemplo.com", tokensLeft: TOKENS_PER_STUDENT, log: [] },
+    { name: "Carlos López", email: "carlos.lopez@ejemplo.com", tokensLeft: TOKENS_PER_STUDENT, log: [] },
+    { name: "María Fernández", email: "maria.fernandez@ejemplo.com", tokensLeft: TOKENS_PER_STUDENT, log: [] },
+    { name: "Estudiante Demo", email: "demo@demo.com", tokensLeft: TOKENS_PER_STUDENT, log: [] },
+    { name: "Jonathan Zaiat", email: "jzaiat@gmail.com", tokensLeft: TOKENS_PER_STUDENT, log: [] },
   ],
 
   cases: [
     {
       id: "caso-01",
-      name: "Caso 1 — Paciente con infecciones recurrentes",
-      description: "Varón con infecciones bacterianas recurrentes desde los 6 meses de vida. Sin historia familiar de inmunodeficiencia conocida.",
+      name: "Caso 1",
+      description: "",
       status: "published",
       // Datos demográficos del paciente
       patient: {
@@ -167,10 +168,11 @@ const DEFAULT_DATA = {
       },
       results: {
         // Info general
-        "info-paciente::general": "INFORMACIÓN DEL PACIENTE:\n• Edad: 8 años\n• Género: Masculino\n• Inicio de síntomas: 6 meses de vida\n• Motivo de consulta: Infecciones bacterianas recurrentes (neumonías, otitis media, sinusitis) desde los 6 meses de vida. Cuadros severos que requirieron múltiples hospitalizaciones.\n• Sin historia familiar conocida de inmunodeficiencia al momento de la consulta inicial.",
+        "info-paciente::general": "INFORMACIÓN DEL PACIENTE:\n• Edad: 60 años\n• Género: Masculino\n• Sin historia familiar conocida de inmunodeficiencia al momento de la consulta inicial.",
         "info-paciente::edad y género": "Edad: 8 años. Género: Masculino.",
-        "info-paciente::inicio de síntomas": "Inicio de síntomas: 6 meses de vida.\nPrimeras manifestaciones: infecciones bacterianas severas a repetición desde los 6 meses (neumonías, otitis media, sinusitis). Los cuadros no respondieron adecuadamente a los tratamientos habituales y requirieron hospitalizaciones repetidas.",
-        "info-paciente::motivo de consulta": "Motivo de consulta: Infecciones bacterianas recurrentes desde los 6 meses de vida. El pediatra refiere al paciente por sospecha de inmunodeficiencia primaria dado el patrón clínico.",
+        "info-paciente::motivo de consulta": "Motivo de consulta: Infecciones bacterianas.",
+        "info-paciente::inicio de síntomas": "Inicio de síntomas: 6 meses de vida.\n Infecciones bacterianas severas a repetición desde los 6 meses (otitis media). Requirieron hospitalizaciones repetidas.",
+        "info-paciente::infecciones": "Infecciones: Infecciones bacterianas recurrentes (neumonías, otitis media, sinusitis) desde los 6 meses de vida. Cuadros severos que requirieron múltiples hospitalizaciones.",
 
         // Antecedentes
         "antecedentes::historia completa": "ANTECEDENTES FAMILIARES (completos):\nPaciente masculino, primogénito. Padres sanos, no consanguíneos.\nUn tío materno (hermano de la madre) falleció a los 4 años de neumonía de repetición. Sin otro familiar con historia similar documentada.\nAbuela materna sana. Abuelo materno sano.\nCONCLUSIÓN: Historia compatible con herencia ligada al X.",
@@ -310,9 +312,48 @@ function initData() {
   if (!localStorage.getItem("egc_data")) {
     localStorage.setItem("egc_data", JSON.stringify(DEFAULT_DATA));
   } else {
-    // Migrar datos existentes: agregar settings y campos nuevos si faltan
+    // Migrar y sincronizar datos existentes
     const data = getData();
     if (!data.settings) data.settings = { queryMode: "both" };
+
+    // Sincronizar estudiantes predefinidos desde DEFAULT_DATA (agregar nuevos o actualizar emails)
+    DEFAULT_DATA.students.forEach(defaultStudent => {
+      const idx = data.students.findIndex(s =>
+        normalize(s.name) === normalize(defaultStudent.name) ||
+        (s.email && defaultStudent.email && normalize(s.email) === normalize(defaultStudent.email))
+      );
+      if (idx === -1) {
+        data.students.push(JSON.parse(JSON.stringify(defaultStudent)));
+      } else {
+        data.students[idx].email = defaultStudent.email;
+      }
+    });
+
+    // Sincronizar casos predefinidos desde DEFAULT_DATA (actualizar textos modificados en data.js)
+    DEFAULT_DATA.cases.forEach(defaultCase => {
+      const idx = data.cases.findIndex(c => c.id === defaultCase.id);
+      if (idx === -1) {
+        data.cases.push(JSON.parse(JSON.stringify(defaultCase)));
+      } else {
+        // Actualizar datos del caso para que coincidan con data.js
+        data.cases[idx].name = defaultCase.name;
+        data.cases[idx].description = defaultCase.description;
+        data.cases[idx].patient = JSON.parse(JSON.stringify(defaultCase.patient));
+
+        if (!data.cases[idx].results) data.cases[idx].results = {};
+        // Sobrescribir/agregar resultados definidos en data.js
+        Object.keys(defaultCase.results).forEach(key => {
+          data.cases[idx].results[key] = defaultCase.results[key];
+        });
+        // Eliminar resultados que ya no están en data.js para este caso por defecto
+        Object.keys(data.cases[idx].results).forEach(key => {
+          if (!(key in defaultCase.results)) {
+            delete data.cases[idx].results[key];
+          }
+        });
+      }
+    });
+
     data.cases.forEach(c => {
       if (!c.status) c.status = "published";
       if (!c.patient) c.patient = { age: "—", gender: "—", symptomOnset: "—" };
@@ -373,23 +414,40 @@ function parseNaturalQuery(text) {
 
   if (!detectedType) return { type: null, subtype: null, target: "", confidence: "none" };
 
-  // Extraer target removiendo palabras de ruido
-  const noiseWords = [
-    ...(detectedType.keywords || []),
-    ...(detectedSubtype?.keywords || []),
-    "quiero", "necesito", "solicito", "pedir", "pido", "ver", "hacer", "dame",
-    "mostrame", "obtener", "traeme", "un", "una", "el", "la", "los", "las",
-    "de", "del", "para", "por", "resultado", "estudio", "analisis", "análisis",
-    "test", "hacer", "realizar", "pedir", "del", "gen", "proteina", "proteína"
-  ];
+  let target = "";
 
-  const textWords = text.split(/\s+/);
-  const filteredWords = textWords.filter(w => {
-    const nw = normalize(w);
-    return nw.length > 1 && !noiseWords.some(nois => normalize(nois) === nw || nw === normalize(nois));
-  });
+  if (detectedType.id === "info-paciente") {
+    // Para info-paciente, mapeamos directamente la intención basada en las palabras clave
+    if (normalized.includes("inicio") || normalized.includes("sintoma") || normalized.includes("comienzo")) {
+      target = "inicio de síntomas";
+    } else if (normalized.includes("motivo") || normalized.includes("consulta")) {
+      target = "motivo de consulta";
+    } else if (normalized.includes("infeccion")) {
+      target = "infecciones";
+    } else if (normalized.includes("edad") || normalized.includes("genero") || normalized.includes("sexo") || normalized.includes("años")) {
+      target = "edad y género";
+    } else {
+      target = "general";
+    }
+  } else {
+    // Extraer target removiendo palabras de ruido para otros estudios
+    const noiseWords = [
+      ...(detectedType.keywords || []),
+      ...(detectedSubtype?.keywords || []),
+      "quiero", "necesito", "solicito", "pedir", "pido", "ver", "hacer", "dame",
+      "mostrame", "obtener", "traeme", "un", "una", "el", "la", "los", "las",
+      "de", "del", "para", "por", "resultado", "estudio", "analisis", "análisis",
+      "test", "hacer", "realizar", "pedir", "del", "gen", "proteina", "proteína"
+    ];
 
-  const target = filteredWords.join(" ").trim();
+    const textWords = text.split(/\s+/);
+    const filteredWords = textWords.filter(w => {
+      const nw = normalize(w);
+      return nw.length > 1 && !noiseWords.some(nois => normalize(nois) === nw || nw === normalize(nois));
+    });
+    target = filteredWords.join(" ").trim();
+  }
+
   const confidence = typeScore >= 1 ? (target.length > 0 || detectedType.fixed ? "high" : "low") : "low";
 
   return { type: detectedType, subtype: detectedSubtype, target, confidence };
