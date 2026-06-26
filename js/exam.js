@@ -36,7 +36,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   renderHeader();
   renderCaseSelector();
-  
+
   // Renderizar el historial restaurado
   if (queryHistory.length > 0) renderHistory();
 
@@ -122,7 +122,7 @@ function selectCase(c, cardEl) {
     freeInput.disabled = false;
     freeInput.placeholder = "Escribí aquí tu consulta... ej: 'Motivo de la consulta'";
   }
-  
+
   // Renderizar el historial cada vez que se cambia de caso (opcional, para mantener el contexto)
   renderHistory();
 }
@@ -139,7 +139,7 @@ function renderCaseInfoBanner(c) {
     .map(entry => `<strong>${entry.studyType}${entry.target ? ` (${entry.target})` : ''}:</strong> ${entry.resultText || '<em>(Información obtenida previamente)</em>'}`)
     .join("<br><br>");
 
-  const descriptionHTML = c.description + 
+  const descriptionHTML = c.description +
     (discoveries ? `<br><br><div class="discoveries-section" style="margin-top:1rem; padding-top:1rem; border-top:1px dashed rgba(255,255,255,0.2);"><strong>🔍 Información obtenida:</strong><br><br>${discoveries}</div>` : "");
 
   banner.innerHTML = `
@@ -170,7 +170,7 @@ function renderFreeQueryBar() {
     <div class="free-query-bar">
       <div class="free-query-header">
         <span class="free-query-badge">🔍 Modo libre</span>
-        <span class="free-query-hint">Describí qué estudio querés solicitar con tus propias palabras</span>
+        <span class="free-query-hint">Describí consulta o estudio que querés preguntar o solicitar</span>
       </div>
       <form id="free-query-form" class="free-query-form">
         <input
@@ -229,14 +229,155 @@ function handleFreeQuery() {
     return;
   }
 
-  // Bug fix: almacenar la consulta en variable global en lugar de pasar por onclick
+  // Verificar si necesita aclaración/follow-up
+  const needsTarget = !parsed.type.fixed &&
+    parsed.type.id !== "info-paciente" &&
+    parsed.type.id !== "antecedentes" &&
+    !parsed.target;
+  const needsSubtype = parsed.type.hasSub && !parsed.subtype;
+
+  if (needsTarget || needsSubtype) {
+    showFreeQueryFollowup(parsed);
+    return;
+  }
+
   const targetDisplay = parsed.type.fixed
     ? parsed.type.fixedTarget
     : (parsed.target || "");
-  pendingFreeQuery = { type: parsed.type, subtype: parsed.subtype, target: targetDisplay };
 
-  const subtypeDisplay = parsed.subtype ? ` › ${parsed.subtype.label}` : "";
-  const hasTarget = !parsed.type.fixed && targetDisplay;
+  pendingFreeQuery = { type: parsed.type, subtype: parsed.subtype, target: targetDisplay };
+  showConfirmationCardFromPending();
+}
+
+function showFreeQueryFollowup(parsed) {
+  const resultDiv = document.getElementById("free-query-result");
+  pendingFreeQuery = { type: parsed.type, subtype: parsed.subtype, target: "" };
+
+  const type = parsed.type;
+  let questionText = "";
+  let formFieldsHTML = "";
+
+  if (type.id === "funcional" && !parsed.subtype) {
+    questionText = `Identificamos que querés solicitar un <strong>${type.label}</strong>. ¿Qué tipo de ensayo y qué estímulo o target deseás realizar?`;
+
+    const subOptions = type.subtypes.map(s => `<option value="${s.id}" data-placeholder="${s.placeholder}">${s.label}</option>`).join("");
+    formFieldsHTML = `
+      <div class="input-group" style="margin-bottom: 0.75rem;">
+        <label for="followup-subtype" style="display:block;font-size:0.8rem;color:var(--text-secondary);margin-bottom:0.3rem;">Tipo de ensayo</label>
+        <select id="followup-subtype" class="study-select" style="width:100%;">
+          ${subOptions}
+        </select>
+      </div>
+      <div class="input-group" style="margin-bottom: 0.75rem;">
+        <label for="followup-target" style="display:block;font-size:0.8rem;color:var(--text-secondary);margin-bottom:0.3rem;">Estímulo / Target</label>
+        <input type="text" id="followup-target" class="free-query-input" style="width:100%;" placeholder="${type.subtypes[0].placeholder}" autocomplete="off" spellcheck="false">
+      </div>
+    `;
+  } else {
+    const label = type.label;
+    const subtype = parsed.subtype;
+    const subtypeDisplay = subtype ? ` (${subtype.label})` : "";
+
+    if (type.id === "western-blot") {
+      questionText = `Identificamos que querés solicitar un <strong>Western Blot</strong>. ¿Para qué gen o proteína querés realizarlo?`;
+    } else if (type.id === "elisa") {
+      questionText = `Identificamos que querés realizar un <strong>ELISA / Dosaje</strong>. ¿Qué analito, inmunoglobulina o citoquina querés dosar?`;
+    } else if (type.id === "pcr") {
+      questionText = `Identificamos que querés realizar una <strong>Sanger / PCR / RT-PCR</strong>. ¿Para qué gen o transcripto?`;
+    } else if (type.id === "citometria") {
+      questionText = `Identificamos que querés solicitar una <strong>Citometría de Flujo</strong>. ¿Qué marcador o subpoblación celular querés analizar?`;
+    } else if (type.id === "interconsulta") {
+      questionText = `Identificamos que querés realizar una <strong>Interconsulta Médica</strong>. ¿Con qué especialista o servicio médico?`;
+    } else if (type.id === "autoanticuerpos") {
+      questionText = `Identificamos que querés medir <strong>Anticuerpos de Autoinmunidad</strong>. ¿Qué anticuerpo específico querés dosar?`;
+    } else if (type.id === "vacuna") {
+      questionText = `Identificamos que querés evaluar la <strong>Respuesta a Vacunas</strong>. ¿Para qué vacuna?`;
+    } else if (type.id === "segregacion") {
+      questionText = `Identificamos que querés solicitar <strong>Segregación Familiar</strong>. ¿De qué gen?`;
+    } else if (type.id === "funcional" && subtype) {
+      if (subtype.id === "proliferacion") {
+        questionText = `Identificamos: <strong>Ensayo Funcional › Proliferación celular</strong>. ¿Con qué estímulo/mitógeno?`;
+      } else if (subtype.id === "citotoxicidad") {
+        questionText = `Identificamos: <strong>Ensayo Funcional › Citotoxicidad</strong>. ¿Para qué células o diana?`;
+      } else if (subtype.id === "citoquinas") {
+        questionText = `Identificamos: <strong>Ensayo Funcional › Producción de citoquinas</strong>. ¿Qué citoquina querés medir?`;
+      } else if (subtype.id === "degranulacion") {
+        questionText = `Identificamos: <strong>Ensayo Funcional › Degranulación</strong>. ¿Con qué estímulo o marcador?`;
+      } else if (subtype.id === "via-interferon") {
+        questionText = `Identificamos: <strong>Ensayo Funcional › Vía del Interferón</strong>. ¿Para qué gen específico?`;
+      }
+    } else {
+      questionText = `Identificamos que querés solicitar: <strong>${label}${subtypeDisplay}</strong>. ¿Para qué target, gen o analito?`;
+    }
+
+    const placeholder = subtype ? subtype.placeholder : (type.placeholder || "Ej: BTK...");
+    formFieldsHTML = `
+      <div class="input-group" style="margin-bottom: 0.75rem;">
+        <label for="followup-target" style="display:block;font-size:0.8rem;color:var(--text-secondary);margin-bottom:0.3rem;">Especificación de la consulta</label>
+        <input type="text" id="followup-target" class="free-query-input" style="width:100%;" placeholder="${placeholder}" autocomplete="off" spellcheck="false">
+      </div>
+    `;
+  }
+
+  resultDiv.innerHTML = `
+    <div class="free-parse-card followup">
+      <div class="parse-card-title">🔍 Consulta incompleta</div>
+      <div class="parse-card-body">
+        <p style="margin-bottom: 0.75rem; font-size: 0.85rem; line-height: 1.4; color: var(--text-primary);">${questionText}</p>
+        <form id="followup-form">
+          ${formFieldsHTML}
+          <div class="parse-actions" style="margin-top: 1rem;">
+            <button type="submit" class="btn-parse-confirm" style="background: rgba(99,102,241,0.2); border-color: rgba(99,102,241,0.4); color: var(--primary-light);">Continuar →</button>
+            <button type="button" class="btn-parse-cancel" id="btn-cancel-followup">✗ Cancelar</button>
+          </div>
+        </form>
+      </div>
+      <p style="font-size:0.75rem;color:var(--text-muted);margin-top:0.5rem;">⚡ No se consume ningún token en esta etapa.</p>
+    </div>
+  `;
+
+  const subSelect = document.getElementById("followup-subtype");
+  if (subSelect) {
+    subSelect.addEventListener("change", () => {
+      const selected = subSelect.options[subSelect.selectedIndex];
+      const targetInput = document.getElementById("followup-target");
+      if (targetInput && selected.dataset.placeholder) {
+        targetInput.placeholder = selected.dataset.placeholder;
+      }
+    });
+  }
+
+  document.getElementById("followup-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    let targetVal = document.getElementById("followup-target")?.value.trim();
+
+    if (type.id === "funcional" && !parsed.subtype) {
+      const subtypeId = document.getElementById("followup-subtype").value;
+      const sub = type.subtypes.find(s => s.id === subtypeId);
+      pendingFreeQuery.subtype = sub;
+    }
+
+    if (!targetVal) {
+      showToast("⚠️ Por favor especificá el gen, proteína o analito", "warning");
+      return;
+    }
+
+    pendingFreeQuery.target = targetVal;
+    showConfirmationCardFromPending();
+  });
+
+  document.getElementById("btn-cancel-followup").addEventListener("click", () => {
+    cancelFreeQuery();
+  });
+}
+
+function showConfirmationCardFromPending() {
+  if (!pendingFreeQuery) return;
+  const { type, subtype, target } = pendingFreeQuery;
+  const resultDiv = document.getElementById("free-query-result");
+
+  const subtypeDisplay = subtype ? ` › ${subtype.label}` : "";
+  const hasTarget = !type.fixed && target;
 
   resultDiv.innerHTML = `
     <div class="free-parse-card confirm">
@@ -244,13 +385,12 @@ function handleFreeQuery() {
       <div class="parse-card-body">
         <div class="parse-row">
           <span class="parse-label">Tipo de estudio:</span>
-          <span class="parse-value">${parsed.type.icon} ${parsed.type.label}${subtypeDisplay}</span>
+          <span class="parse-value">${type.icon} ${type.label}${subtypeDisplay}</span>
         </div>
         ${hasTarget ? `<div class="parse-row">
           <span class="parse-label">Consulta específica:</span>
-          <span class="parse-value parse-target">${targetDisplay}</span>
+          <span class="parse-value parse-target">${target}</span>
         </div>` : ""}
-        ${parsed.confidence === "low" ? `<p class="parse-warning">⚠️ Interpretación incierta. Si no es lo que querés, cancelá y reescribí.</p>` : ""}
       </div>
       <div class="parse-actions">
         <button class="btn-parse-confirm" id="btn-confirm-query">✓ Confirmar y solicitar <span style="font-size:0.75rem;opacity:0.7">−1 token</span></button>
@@ -258,12 +398,10 @@ function handleFreeQuery() {
       </div>
     </div>`;
 
-  // Bug fix: usar addEventListener en lugar de onclick inline
   document.getElementById("btn-confirm-query").addEventListener("click", () => confirmFreeQuery());
   document.getElementById("btn-cancel-query").addEventListener("click", () => cancelFreeQuery());
 }
 
-// Bug fix: no parámetros, usa pendingFreeQuery
 function confirmFreeQuery() {
   if (!pendingFreeQuery) return;
   const { type, subtype, target } = pendingFreeQuery;
@@ -416,7 +554,7 @@ function submitStudyDirect(type, subtype, target) {
 
   showProcessing(type, subtype, target, () => {
     const resultText = result || buildNotFoundText(type, subtype, target);
-    
+
     const { tokensLeft } = consumeToken(
       session.name, currentCase.id,
       type.label + (subtype ? ` › ${subtype.label}` : ""),
@@ -425,7 +563,7 @@ function submitStudyDirect(type, subtype, target) {
 
     addToHistory(type, subtype, target, resultText, resultFound, tokensLeft);
     updateTokenBadge();
-    
+
     // Actualizar la descripción del caso con la nueva info obtenida
     if (resultFound) {
       renderCaseInfoBanner(currentCase);
@@ -464,7 +602,7 @@ function findResult(c, typeId, subtypeId, target) {
     if (subtypeId && kvSub && kvSub !== subtypeId) continue;
 
     if (kvTarget === nTarget) return value;
-    if (kvTarget.includes(nTarget) || nTarget.includes(kvTarget)) return value;
+    if (nTarget && (kvTarget.includes(nTarget) || nTarget.includes(kvTarget))) return value;
   }
 
   return null;

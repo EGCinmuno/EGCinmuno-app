@@ -54,7 +54,8 @@ const STUDY_TYPES = [
     color: "#8b5cf6",
     placeholder: "Ej: CD19 B cells, CD4 T cells, CD5 CD19...",
     description: "Análisis de subpoblaciones leucocitarias por marcadores de superficie",
-    keywords: ["citometria", "citometría", "flow", "facs", "cd4", "cd8", "cd19", "cd3", "subpoblacion", "subpoblación", "marcador", "fenotipo"]
+    keywords: ["citometria", "citometría", "flow", "facs", "cd4", "cd8", "cd19", "cd3", "subpoblacion", "subpoblación", "marcador", "fenotipo"],
+    indicators: ["citometria", "citometría", "flow", "facs", "subpoblacion", "subpoblación", "marcador", "fenotipo"]
   },
   {
     id: "elisa",
@@ -63,16 +64,37 @@ const STUDY_TYPES = [
     color: "#10b981",
     placeholder: "Ej: IgG, IgM, IgA, IgE, IL-6, TNF-α...",
     description: "Cuantificación de inmunoglobulinas, citoquinas y proteínas séricas",
-    keywords: ["elisa", "dosaje", "dosage", "inmunoglobulina", "inmunoglobulinas", "anticuerpo", "anticuerpos", "igg", "igm", "iga", "ige", "igd", "inmuno", "serico", "sérico", "cuantificacion", "cuantificación"]
+    keywords: ["elisa", "dosaje", "dosage", "inmunoglobulina", "inmunoglobulinas", "IgG", "IgM", "IgA", "IgE", "IgD", "igg", "igm", "iga", "ige", "igd", "inmuno", "serico", "sérico", "cuantificacion", "cuantificación"],
+    indicators: ["elisa", "dosaje", "dosage", "inmunoglobulina", "inmunoglobulinas", "anticuerpo", "anticuerpos", "inmuno", "serico", "sérico", "cuantificacion", "cuantificación"]
   },
   {
     id: "pcr",
-    label: "PCR / RT-PCR",
+    label: "Sanger / PCR / RT-PCR",
     icon: "🧪",
     color: "#f59e0b",
     placeholder: "Ej: BTK mRNA, WAS mRNA, JAK3...",
     description: "Detección y cuantificación de transcriptos génicos",
-    keywords: ["pcr", "rtpcr", "rt-pcr", "mrna", "transcripto", "amplificacion", "amplificación", "gen", "expresion", "expresión"]
+    keywords: ["sanger", "Sanger", "pcr", "rtpcr", "rt-pcr", "mrna", "transcripto", "amplificacion", "amplificación", "gen", "expresion", "expresión"]
+  },
+  {
+    id: "interconsulta",
+    label: "Interconsulta Médica",
+    icon: "🧑‍⚕️💬",
+    color: "#eeca8c",
+    placeholder: "Ej: Dermatología, Neurología, Gastroenterología, Cardiología...",
+    description: "Consulta médica o derivación a otras especialidades",
+    keywords: ["interconsulta", "consulta", "especialista", "derivacion", "derivación", "especialidad", "neurologia", "neurología", "neuro", "convulsion", "musculo", "músculo", "gastrointestinal", "gastroenterologia", "gastroenterología", "gastro", "intestin", "diarrea", "estomago", "estómago", "dermatologia", "dermatología", "dermato", "piel", "eccema", "dermatitis", "cardiologia", "cardiología", "cardio", "corazon", "corazón", "soplo", "neumonologia", "neumonología", "hematologia", "hematología", "infectologia", "infectología"],
+    indicators: ["interconsulta", "consulta", "especialista", "derivacion", "derivación", "pedir", "solicitar", "evaluacion", "evaluación"]
+  },
+  {
+    id: "autoanticuerpos",
+    label: "Anticuerpos de Autoinmunidad",
+    icon: "🛡️",
+    color: "#fb7185",
+    placeholder: "Ej: ANA, anti-DNA, ANCA, anti-Sm...",
+    description: "Detección de anticuerpos asociados a patologías autoinmunes",
+    keywords: ["autoanticuerpo", "autoanticuerpos", "autoinmune", "autoinmunidad", "ana", "fan", "anti-dna", "antidna", "anca", "anti-sm", "antism", "anti-ro", "anti-la", "lupus", "artritis", "factor reumatoideo"],
+    indicators: ["autoanticuerpo", "autoanticuerpos", "autoinmune", "autoinmunidad", "deteccion", "detección", "presencia"]
   },
   {
     id: "vacuna",
@@ -81,7 +103,8 @@ const STUDY_TYPES = [
     color: "#06b6d4",
     placeholder: "Ej: Tétanos, Neumococo, Hepatitis B, Difteria...",
     description: "Títulos de anticuerpos pre/post vacunación y evaluación de respuesta protectora",
-    keywords: ["vacuna", "vacunacion", "vacunación", "titulo", "título", "inmunizacion", "inmunización", "tetanos", "tétanos", "neumococo", "hepatitis", "difteria"]
+    keywords: ["vacuna", "vacunacion", "vacunación", "titulo", "título", "inmunizacion", "inmunización", "tetanos", "tétanos", "neumococo", "hepatitis", "difteria"],
+    indicators: ["vacuna", "vacunacion", "vacunación", "titulo", "título", "inmunizacion", "inmunización"]
   },
   {
     id: "segregacion",
@@ -105,31 +128,36 @@ const STUDY_TYPES = [
         id: "proliferacion",
         label: "Proliferación celular",
         placeholder: "Ej: PHA, anti-CD3, PWM, PMA+ionomicina",
-        keywords: ["proliferacion", "proliferación", "proliferar", "pha", "timidina", "ki67", "cfse", "division", "división"]
+        keywords: ["proliferacion", "proliferación", "proliferar", "pha", "timidina", "ki67", "cfse", "division", "división"],
+        indicators: ["proliferacion", "proliferación", "proliferar", "timidina", "ki67", "cfse", "division", "división"]
       },
       {
         id: "citotoxicidad",
         label: "Citotoxicidad",
         placeholder: "Ej: NK, CTL, célula diana K562",
-        keywords: ["citotoxicidad", "citotóxico", "citotoxica", "nk", "ctl", "lisis", "killing"]
+        keywords: ["citotoxicidad", "citotóxico", "citotoxica", "nk", "ctl", "lisis", "killing"],
+        indicators: ["citotoxicidad", "citotóxico", "citotoxica", "lisis", "killing"]
       },
       {
         id: "citoquinas",
         label: "Producción de citoquinas",
         placeholder: "Ej: IL-2, IFN-γ, TNF-α, IL-10...",
-        keywords: ["citoquina", "citocina", "citokina", "il-2", "il2", "ifn", "interferon", "interferón", "tnf", "interleucina"]
+        keywords: ["citoquina", "citocina", "citokina", "il-2", "il2", "ifn", "interferon", "interferón", "tnf", "interleucina"],
+        indicators: ["citoquina", "citocina", "citokina", "interleucina"]
       },
       {
         id: "degranulacion",
         label: "Degranulación",
         placeholder: "Ej: CD107a (NK), perforina, granzima",
-        keywords: ["degranulacion", "degranulación", "cd107", "perforina", "granzima", "granzyme"]
+        keywords: ["degranulacion", "degranulación", "cd107", "perforina", "granzima", "granzyme"],
+        indicators: ["degranulacion", "degranulación", "perforina", "granzima", "granzyme"]
       },
       {
         id: "via-interferon",
         label: "Vía del Interferón (gen específico)",
         placeholder: "Ej: STAT1, IRF3, IRF7, MX1, IFNAR1...",
-        keywords: ["via interferon", "vía interferón", "signaling", "señalizacion", "stat1", "irf3", "irf7", "mx1", "ifnar", "sting", "jak1", "tyk2"]
+        keywords: ["via interferon", "vía interferón", "signaling", "señalizacion", "stat1", "irf3", "irf7", "mx1", "ifnar", "sting", "jak1", "tyk2"],
+        indicators: ["via interferon", "vía interferón", "signaling", "señalizacion"]
       }
     ],
     keywords: ["funcional", "ensayo", "proliferacion", "proliferación", "citotoxicidad", "citoquina", "citocina", "degranulacion", "degranulación", "interferon", "interferón", "via del interferon"]
@@ -152,6 +180,8 @@ const DEFAULT_DATA = {
     { name: "María Fernández", email: "maria.fernandez@ejemplo.com", tokensLeft: TOKENS_PER_STUDENT, log: [] },
     { name: "Estudiante Demo", email: "demo@demo.com", tokensLeft: TOKENS_PER_STUDENT, log: [] },
     { name: "Jonathan Zaiat", email: "jzaiat@gmail.com", tokensLeft: TOKENS_PER_STUDENT, log: [] },
+    { name: "Belen Almejun", email: "mbalmejun@gmail.com", tokensLeft: TOKENS_PER_STUDENT, log: [] },
+
   ],
 
   cases: [
@@ -187,9 +217,13 @@ const DEFAULT_DATA = {
         "hemograma::completo": "Hemograma completo:\n• Leucocitos: 4.200/μL (↓ leve)\n• Linfocitos: 850/μL (↓↓ marcado, VN: 1500–4000)\n• Neutrófilos: 3.100/μL (normal)\n• Hemoglobina: 12.8 g/dL (normal)\n• Plaquetas: 230.000/μL (normal)\nCONCLUSIÓN: Linfopenia significativa.",
 
         // Citometría
+        // Citometría
         "citometria::CD19 B cells": "Citometría — Linfocitos B (CD19+):\nCD19+ = 0.1% (↓↓ marcadamente reducido, VN: 6–25%)\nLas células B son prácticamente indetectables.\nCONCLUSIÓN: Ausencia de linfocitos B circulantes.",
+        "citometria::CD20 B cells": "Citometría — Linfocitos B (CD20+):\nCD20+ = 0.1% (↓↓ marcadamente reducido, VN: 6–25%)\nLas células B maduras son prácticamente indetectables.\nCONCLUSIÓN: Ausencia de linfocitos B circulantes CD20+.",
+        "citometria::CD3 T cells": "Citometría — Linfocitos T (CD3+):\nCD3+ = 72% (normal, VN: 60–85%)\nCONCLUSIÓN: Población de linfocitos T totales en rango normal.",
         "citometria::CD4 T cells": "Citometría — Linfocitos T CD4+:\nCD4+ = 28% (normal, VN: 25–45%)\nCONCLUSIÓN: Población T cooperadora normal.",
         "citometria::CD8 T cells": "Citometría — Linfocitos T CD8+:\nCD8+ = 31% (normal, VN: 20–35%)\nCONCLUSIÓN: Linfocitos T citotóxicos en rango normal.",
+        "citometria::LB memoria": "Citometría — Linfocitos B de Memoria (CD19+CD27+):\nCD19+CD27+ = 0.0% (↓↓ marcadamente reducido, VN: 1.5–10%)\nLas células B de memoria con cambio de isotipo son indetectables.\nCONCLUSIÓN: Ausencia de linfocitos B de memoria circulantes.",
 
         // PCR
         "pcr::BTK mRNA": "RT-PCR para BTK mRNA:\nNo se detecta producto de amplificación en la muestra del paciente. Control positivo amplifica correctamente.\nCONCLUSIÓN: Ausencia de transcripto de BTK.",
@@ -212,6 +246,14 @@ const DEFAULT_DATA = {
         "funcional::proliferacion::anti-CD3": "Proliferación — anti-CD3:\nIE: 18.4 (normal, VN: > 10)\nCONCLUSIÓN: Proliferación T normal ante estímulo de TCR.",
         "funcional::citotoxicidad::NK": "Citotoxicidad NK (ratio 10:1):\nActividad lítica: 38% (VN: 20–50%)\nCONCLUSIÓN: Función NK conservada.",
         "funcional::via-interferon::STAT1": "Vía del Interferón — STAT1:\nFosfopSTAT1 tras IFN-γ (30 min): 62% (normal, VN: > 50%)\nFosfopSTAT1 tras IFN-α: 58% (normal)\nCONCLUSIÓN: Señalización por STAT1 conservada. No hay defecto en la vía JAK-STAT del interferón.",
+        // Interconsultas
+        "interconsulta::Dermatología": "Dermatología: Paciente refiere eccema leve transitorio en brazos. Sin lesiones activas relevantes al examen físico.",
+        "interconsulta::Neurología": "Neurología: Examen neurológico completo normal. Sin alteraciones ni signos de organicidad.",
+        "interconsulta::Gastrointestinal": "Gastrointestinal: Sin síntomas de malabsorción ni diarrea crónica. Examen físico abdominal normal.",
+        "interconsulta::Cardiología": "Cardiología: Examen cardiovascular normal. Ruidos cardíacos netos, normofrecuentes, sin soplos.",
+        // Autoanticuerpos
+        "autoanticuerpos::ANA": "Anticuerpos Antinucleares (ANA): Negativo (no reactivo). (No se observan títulos de autoanticuerpos circulantes).",
+        "autoanticuerpos::anti-DNA": "Anticuerpos anti-DNA de doble cadena: Negativo."
       }
     },
 
@@ -252,6 +294,14 @@ const DEFAULT_DATA = {
         "funcional::proliferacion::PHA": "Proliferación — PHA:\nIE: 6.2 (↓ levemente, VN: > 10). Interferido por la linfocitosis B dominante.\nCONCLUSIÓN: Función T proliferativa conservada con señal interferida.",
         "funcional::citotoxicidad::NK": "Citotoxicidad NK (10:1):\nActividad lítica: 18% (↓ leve, VN: 20–50%)\nCONCLUSIÓN: Función NK levemente disminuida.",
         "funcional::via-interferon::JAK1": "Vía del Interferón — JAK1:\nNo se detecta fosfo-JAK1 tras estimulación con IFN-α.\nCONCLUSIÓN: Defecto en señalización JAK1 en contexto tumoral. No necesariamente germinal.",
+        // Interconsultas
+        "interconsulta::Dermatología": "Dermatología: No se observan lesiones cutáneas activas ni eccemas.",
+        "interconsulta::Neurología": "Neurología: Examen neurológico sin particularidades.",
+        "interconsulta::Gastrointestinal": "Gastrointestinal: Sin alteraciones en el ritmo evacuatorio, no se refiere dolor abdominal recurrente.",
+        "interconsulta::Cardiología": "Cardiología: Soplo sistólico eyectivo funcional fisiológico. ECG dentro de límites normales.",
+        // Autoanticuerpos
+        "autoanticuerpos::ANA": "ANA por IFI: Positivo (título 1:160, patrón moteado). Compatible con componente autoinmune secundario.",
+        "autoanticuerpos::anti-DNA": "anti-DNA de doble cadena: Negativo."
       }
     },
 
@@ -299,6 +349,14 @@ const DEFAULT_DATA = {
         "funcional::degranulacion::CD107a": "Degranulación — CD107a (NK):\nCD107a+ post-activación: 8% (↓↓, VN: > 20%)\nCONCLUSIÓN: Defecto de degranulación NK por disfunción del citoesqueleto de actina.",
         "funcional::citoquinas::IFN-γ": "Citoquinas — IFN-γ intracelular (CD4+/PMA+ionomicina):\n3.2% IFN-γ+ (↓, VN: 10–25%)\nCONCLUSIÓN: Producción reducida. Disfunción Th1.",
         "funcional::via-interferon::STAT1": "Vía del Interferón — STAT1:\nFosfo-STAT1 tras IFN-γ: 14% (↓↓, VN: > 50%)\nFosfo-STAT1 tras IFN-α: 11% (↓↓)\nCONCLUSIÓN: Señalización por interferón REDUCIDA. Defecto funcional en la vía JAK-STAT en contexto de WAS.",
+        // Interconsultas
+        "interconsulta::Dermatología": "Dermatología: Se constata eccema atópico severo y generalizado, liquenificado, con lesiones de rascado y sobreinfección en flexuras. Prurito intenso.",
+        "interconsulta::Neurología": "Neurología: Examen neurológico normal. Sin signos focales.",
+        "interconsulta::Gastrointestinal": "Gastrointestinal: Episodios intermitentes de diarrea con estrías de sangre (proctocolitis). Frecuencia de deposiciones aumentada.",
+        "interconsulta::Cardiología": "Cardiología: Ruidos cardíacos normales, normofrecuentes, sin soplos.",
+        // Autoanticuerpos
+        "autoanticuerpos::ANA": "Anticuerpos Antinucleares (ANA): Negativo.",
+        "autoanticuerpos::anti-DNA": "Anticuerpos anti-DNA: Negativo."
       }
     }
   ]
@@ -429,11 +487,48 @@ function parseNaturalQuery(text) {
     } else {
       target = "general";
     }
+  } else if (detectedType.id === "antecedentes") {
+    // Mapeo directo para antecedentes familiares
+    if (normalized.includes("padre") || normalized.includes("madre") || normalized.includes("parental") || normalized.includes("consanguin")) {
+      target = "parentales";
+    } else if (normalized.includes("herman") || normalized.includes("sibling")) {
+      target = "hermanos";
+    } else {
+      target = "historia completa";
+    }
+  } else if (detectedType.id === "interconsulta") {
+    // Mapeo directo para especialidades comunes de interconsulta
+    if (normalized.includes("dermato") || normalized.includes("piel") || normalized.includes("eccema") || normalized.includes("dermatitis")) {
+      target = "Dermatología";
+    } else if (normalized.includes("neuro") || normalized.includes("convulsion") || normalized.includes("convulsión") || normalized.includes("sindrómico") || normalized.includes("sindromico") || normalized.includes("retraso motor") || normalized.includes("retraso desarrollo") || normalized.includes("retraso") || normalized.includes("musculo") || normalized.includes("músculo")) {
+      target = "Neurología";
+    } else if (normalized.includes("gastro") || normalized.includes("intestin") || normalized.includes("diarrea") || normalized.includes("estomago") || normalized.includes("estómago")) {
+      target = "Gastrointestinal";
+    } else if (normalized.includes("cardio") || normalized.includes("corazon") || normalized.includes("corazón") || normalized.includes("soplo")) {
+      target = "Cardiología";
+    } else {
+      // Extraer target removiendo palabras de ruido para otros estudios
+      const noiseWords = [
+        ...(detectedType.indicators || detectedType.keywords || []),
+        ...(detectedSubtype?.indicators || detectedSubtype?.keywords || []),
+        "quiero", "necesito", "solicito", "pedir", "pido", "ver", "hacer", "dame",
+        "mostrame", "obtener", "traeme", "un", "una", "el", "la", "los", "las", "medir", "detectar",
+        "de", "del", "para", "por", "resultado", "estudio", "analisis", "análisis",
+        "test", "hacer", "realizar", "pedir", "del", "gen", "proteina", "proteína"
+      ];
+
+      const textWords = text.split(/\s+/);
+      const filteredWords = textWords.filter(w => {
+        const nw = normalize(w);
+        return nw.length > 1 && !noiseWords.some(nois => normalize(nois) === nw || nw === normalize(nois));
+      });
+      target = filteredWords.join(" ").trim();
+    }
   } else {
     // Extraer target removiendo palabras de ruido para otros estudios
     const noiseWords = [
-      ...(detectedType.keywords || []),
-      ...(detectedSubtype?.keywords || []),
+      ...(detectedType.indicators || detectedType.keywords || []),
+      ...(detectedSubtype?.indicators || detectedSubtype?.keywords || []),
       "quiero", "necesito", "solicito", "pedir", "pido", "ver", "hacer", "dame",
       "mostrame", "obtener", "traeme", "un", "una", "el", "la", "los", "las",
       "de", "del", "para", "por", "resultado", "estudio", "analisis", "análisis",

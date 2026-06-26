@@ -135,3 +135,19 @@ function syncSession() {
   }
   return session;
 }
+
+// ──────────────────────────────────────────────
+// GESTIÓN DE TEMA (CLARO/OSCURO)
+// ──────────────────────────────────────────────
+
+document.addEventListener("DOMContentLoaded", () => {
+  const toggleBtn = document.getElementById("theme-toggle-btn");
+  if (toggleBtn) {
+    toggleBtn.addEventListener("click", () => {
+      const currentTheme = document.documentElement.getAttribute("data-theme") || "dark";
+      const newTheme = currentTheme === "dark" ? "light" : "dark";
+      document.documentElement.setAttribute("data-theme", newTheme);
+      localStorage.setItem("theme", newTheme);
+    });
+  }
+});

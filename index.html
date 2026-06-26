@@ -1,86 +1,90 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>EGCinmuno — Laboratorio Virtual de Examen</title>
   <meta name="description" content="Plataforma de examen práctico de Especialización en Genética Clínica e Inmunología">
   <link rel="stylesheet" href="css/styles.css">
+  <script>
+    (function () {
+      const theme = localStorage.getItem("theme") || "dark";
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
 </head>
+
 <body>
 
-<main class="login-page">
-  <div class="login-card">
-    <div class="login-brand">
-      <span class="login-logo">🧬</span>
-      <h1>EGCinmuno</h1>
-      <p>Laboratorio Virtual · Examen Práctico</p>
-    </div>
+  <button class="btn-theme-toggle" id="theme-toggle-btn" style="position:fixed; top:1.5rem; right:1.5rem; z-index:1000;"
+    title="Cambiar tema">🌓</button>
 
-    <form class="login-form" id="login-form">
-      <div class="form-group">
-        <label for="student-input">Nombre completo o email institucional</label>
-        <input
-          type="text"
-          id="student-input"
-          name="student-input"
-          placeholder="Ej: Ana García o ana.garcia@uni.edu"
-          autocomplete="name"
-          autocorrect="off"
-          spellcheck="false"
-          required
-        >
+  <main class="login-page">
+    <div class="login-card">
+      <div class="login-brand">
+        <span class="login-logo">🧬</span>
+        <h1>EGC-Inmuno</h1>
+        <p>Consulta y Laboratorio Virtual</p>
       </div>
 
-      <button type="submit" class="btn-login" id="login-btn">
-        Ingresar al Laboratorio
-      </button>
+      <form class="login-form" id="login-form">
+        <div class="form-group">
+          <label for="student-input">Nombre completo o email institucional</label>
+          <input type="text" id="student-input" name="student-input" placeholder="Ej: Ana García o ana.garcia@uni.edu"
+            autocomplete="name" autocorrect="off" spellcheck="false" required>
+        </div>
 
-      <div class="login-error" id="login-error"></div>
-    </form>
+        <button type="submit" class="btn-login" id="login-btn">
+          Ingresar
+        </button>
 
-    <p class="login-hint">
-      ¿Sos docente? <a href="admin.html">Acceder al panel de administración →</a>
-    </p>
-  </div>
-</main>
+        <div class="login-error" id="login-error"></div>
+      </form>
 
-<script src="js/data.js"></script>
-<script src="js/auth.js"></script>
-<script>
-  document.addEventListener("DOMContentLoaded", () => {
-    // Si ya hay sesión activa, redirigir
-    if (getSession()) {
-      window.location.href = "exam.html";
-      return;
-    }
+      <p class="login-hint">
+        ¿Sos docente? <a href="admin.html">Acceder al panel de administración →</a>
+      </p>
+    </div>
+  </main>
 
-    const form = document.getElementById("login-form");
-    const errorEl = document.getElementById("login-error");
+  <script src="js/data.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      // Si ya hay sesión activa, redirigir
+      if (getSession()) {
+        window.location.href = "exam.html";
+        return;
+      }
 
-    form.addEventListener("submit", e => {
-      e.preventDefault();
-      const input = document.getElementById("student-input").value.trim();
-      const btn = document.getElementById("login-btn");
+      const form = document.getElementById("login-form");
+      const errorEl = document.getElementById("login-error");
 
-      btn.disabled = true;
-      btn.textContent = "Verificando...";
+      form.addEventListener("submit", e => {
+        e.preventDefault();
+        const input = document.getElementById("student-input").value.trim();
+        const btn = document.getElementById("login-btn");
 
-      setTimeout(() => {
-        const result = loginStudent(input);
-        if (result.success) {
-          btn.textContent = "✓ Acceso concedido";
-          setTimeout(() => window.location.href = "exam.html", 400);
-        } else {
-          errorEl.textContent = result.error;
-          errorEl.style.display = "block";
-          btn.disabled = false;
-          btn.textContent = "Ingresar al Laboratorio";
-        }
-      }, 600);
+        btn.disabled = true;
+        btn.textContent = "Verificando...";
+
+        setTimeout(() => {
+          const result = loginStudent(input);
+          if (result.success) {
+            btn.textContent = "✓ Acceso concedido";
+            setTimeout(() => window.location.href = "exam.html", 400);
+          } else {
+            errorEl.textContent = result.error;
+            errorEl.style.display = "block";
+            btn.disabled = false;
+            btn.textContent = "Ingresar al Laboratorio";
+          }
+        }, 600);
+      });
     });
-  });
-</script>
+  </script>
 
 </body>
+
 </html>
