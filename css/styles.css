@@ -1523,4 +1523,256 @@ code, pre {
   font-weight: 500;
 }
 
+/* ══════════════════════════════════════════
+   MAPA CORPORAL INTERACTIVO
+   ══════════════════════════════════════════ */
+.case-info-banner {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 1.5rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  height: 400px;
+  box-shadow: var(--shadow-sm);
+  transition: background var(--transition), border-color var(--transition);
+}
+
+.body-map-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.75rem;
+  position: relative;
+  width: 200px;
+  flex-shrink: 0;
+  height: 100%;
+  overflow-y: auto;
+}
+
+:root[data-theme="light"] .body-map-column {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.body-map-title {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--primary-light);
+  margin-bottom: 0.75rem;
+  text-align: center;
+}
+
+.body-map-wrapper {
+  position: relative;
+  width: 140px;
+  height: 220px;
+}
+
+.body-silhouette-svg {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 0 10px rgba(99, 102, 241, 0.15));
+}
+
+/* Glowing Indicator Dots */
+.body-marker {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  cursor: pointer;
+  z-index: 10;
+  transform: translate(-50%, -50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+
+.body-marker::before {
+  content: '';
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--marker-color, var(--primary));
+  opacity: 0.8;
+  transition: transform var(--transition), background-color var(--transition);
+  z-index: 1;
+}
+
+.body-marker.active::after {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid var(--marker-color, var(--primary));
+  animation: pulse-ring 1.8s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.body-marker:hover::before {
+  transform: scale(1.4);
+}
+
+.body-marker:hover {
+  box-shadow: 0 0 12px var(--marker-color, var(--primary));
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.body-marker.inactive {
+  cursor: default;
+  opacity: 0.15;
+  pointer-events: none;
+}
+
+.body-marker.inactive::after {
+  display: none;
+}
+
+/* Specific anatomical marker colors */
+.body-marker[data-region="head"] { --marker-color: var(--warning); }
+.body-marker[data-region="lungs"] { --marker-color: var(--info); }
+.body-marker[data-region="abdomen"] { --marker-color: var(--success); }
+.body-marker[data-region="skin"] { --marker-color: #ec4899; }
+.body-marker[data-region="joints"] { --marker-color: var(--accent-light); }
+.body-marker[data-region="systemic"] { --marker-color: var(--primary-light); }
+
+/* Findings Side Column */
+.body-findings-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  overflow-y: auto;
+  height: 100%;
+  padding-right: 0.5rem;
+}
+
+.findings-group {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1rem;
+  transition: all var(--transition-slow);
+}
+
+.findings-group.highlighted {
+  border-color: var(--border-active);
+  background: rgba(99, 102, 241, 0.06);
+  box-shadow: 0 0 10px rgba(99, 102, 241, 0.1);
+}
+
+.findings-group-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.2rem;
+}
+
+.findings-group-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-primary);
+}
+
+.findings-group-text {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+/* Animations */
+@keyframes pulse-ring {
+  0% { transform: scale(0.33); opacity: 0; }
+  40% { opacity: 0.6; }
+  100% { transform: scale(1.3); opacity: 0; }
+}
+
+@media (max-width: 768px) {
+  .case-info-banner {
+    flex-direction: column;
+  }
+  .body-map-column {
+    width: 100%;
+    height: 240px;
+  }
+  .body-findings-column {
+    max-height: none;
+  }
+}
+
+.special-studies-silhouette {
+  margin-top: 1rem;
+  width: 100%;
+  border-top: 1px dashed var(--border);
+  padding-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.special-studies-title {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.special-studies-tags {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  width: 100%;
+}
+
+.special-study-tag {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.3rem 0.5rem;
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: all var(--transition);
+  color: var(--text-secondary);
+}
+
+.special-study-tag:hover {
+  background: rgba(99, 102, 241, 0.08);
+  border-color: var(--border-active);
+  color: var(--text-primary);
+}
+
+.special-study-icon {
+  font-size: 0.85rem;
+}
+
+.special-study-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 

@@ -24,9 +24,9 @@ const STUDY_TYPES = [
     label: "Antecedentes Familiares",
     icon: "👨‍👩‍👧‍👦",
     color: "#ec4899",
-    description: "Historia familiar: parentales, hermanos o historia completa",
-    placeholder: "Ej: historia completa, parentales, hermanos/hermanas...",
-    keywords: ["antecedente", "familiar", "familia", "historia", "anamnesis", "hereditario", "hereditaria", "padres", "parentales", "hermano", "hermana", "siblings"]
+    description: "Historia familiar: parentales, hermanos o abuelos/tíos",
+    placeholder: "Ej: abuelos/tíos, parentales, hermanos/hermanas...",
+    keywords: ["antecedente", "familiar", "familia", "historia", "anamnesis", "hereditario", "hereditaria", "padres", "parentales", "hermano", "hermana", "siblings", "abuelo", "abuela", "abuelos", "tío", "tía", "tio", "tia", "tíos", "tias", "tios"]
   },
   {
     id: "western-blot",
@@ -35,7 +35,7 @@ const STUDY_TYPES = [
     color: "#6366f1",
     placeholder: "Ej: BTK, p53, WASp, STAT1, JAK3...",
     description: "Detección de proteína específica por electroforesis e inmunotransferencia",
-    keywords: ["western", "blot", "wb", "inmunotransferencia", "proteina", "proteína", "banda"]
+    keywords: ["western", "blot", "wb", "inmunotransferencia", "proteina", "proteína", "proteinas", "proteínas", "banda", "bandas"]
   },
   {
     id: "hemograma",
@@ -54,8 +54,8 @@ const STUDY_TYPES = [
     color: "#8b5cf6",
     placeholder: "Ej: CD19 B cells, CD4 T cells, CD5 CD19...",
     description: "Análisis de subpoblaciones leucocitarias por marcadores de superficie",
-    keywords: ["citometria", "citometría", "flow", "facs", "cd4", "cd8", "cd19", "cd3", "subpoblacion", "subpoblación", "marcador", "fenotipo"],
-    indicators: ["citometria", "citometría", "flow", "facs", "subpoblacion", "subpoblación", "marcador", "fenotipo"]
+    keywords: ["citometria", "citometría", "citometrias", "flow", "facs", "cd4", "cd8", "cd19", "cd3", "subpoblacion", "subpoblación", "subpoblaciones", "marcador", "marcadores", "fenotipo", "fenotipos"],
+    indicators: ["citometria", "citometría", "citometrias", "flow", "facs", "subpoblacion", "subpoblación", "subpoblaciones", "marcador", "marcadores", "fenotipo", "fenotipos"]
   },
   {
     id: "elisa",
@@ -64,8 +64,8 @@ const STUDY_TYPES = [
     color: "#10b981",
     placeholder: "Ej: IgG, IgM, IgA, IgE, IL-6, TNF-α...",
     description: "Cuantificación de inmunoglobulinas, citoquinas y proteínas séricas",
-    keywords: ["elisa", "dosaje", "dosage", "inmunoglobulina", "inmunoglobulinas", "IgG", "IgM", "IgA", "IgE", "IgD", "igg", "igm", "iga", "ige", "igd", "inmuno", "serico", "sérico", "cuantificacion", "cuantificación"],
-    indicators: ["elisa", "dosaje", "dosage", "inmunoglobulina", "inmunoglobulinas", "anticuerpo", "anticuerpos", "inmuno", "serico", "sérico", "cuantificacion", "cuantificación"]
+    keywords: ["elisa", "dosaje", "dosajes", "dosage", "inmunoglobulina", "inmunoglobulinas", "IgG", "IgM", "IgA", "IgE", "IgD", "igg", "igm", "iga", "ige", "igd", "inmuno", "serico", "sérico", "cuantificacion", "cuantificación"],
+    indicators: ["elisa", "dosaje", "dosajes", "dosage", "inmunoglobulina", "inmunoglobulinas", "anticuerpo", "anticuerpos", "inmuno", "serico", "sérico", "cuantificacion", "cuantificación"]
   },
   {
     id: "pcr",
@@ -74,7 +74,7 @@ const STUDY_TYPES = [
     color: "#f59e0b",
     placeholder: "Ej: BTK mRNA, WAS mRNA, JAK3...",
     description: "Detección y cuantificación de transcriptos génicos",
-    keywords: ["sanger", "Sanger", "pcr", "rtpcr", "rt-pcr", "mrna", "transcripto", "amplificacion", "amplificación", "gen", "expresion", "expresión"]
+    keywords: ["sanger", "Sanger", "pcr", "rtpcr", "rt-pcr", "mrna", "transcripto", "transcriptos", "amplificacion", "amplificación", "gen", "genes", "expresion", "expresión"]
   },
   {
     id: "interconsulta",
@@ -83,8 +83,8 @@ const STUDY_TYPES = [
     color: "#eeca8c",
     placeholder: "Ej: Dermatología, Neurología, Gastroenterología, Cardiología...",
     description: "Consulta médica o derivación a otras especialidades",
-    keywords: ["interconsulta", "consulta", "especialista", "derivacion", "derivación", "especialidad", "neurologia", "neurología", "neuro", "convulsion", "musculo", "músculo", "gastrointestinal", "gastroenterologia", "gastroenterología", "gastro", "intestin", "diarrea", "estomago", "estómago", "dermatologia", "dermatología", "dermato", "piel", "eccema", "dermatitis", "cardiologia", "cardiología", "cardio", "corazon", "corazón", "soplo", "neumonologia", "neumonología", "hematologia", "hematología", "infectologia", "infectología"],
-    indicators: ["interconsulta", "consulta", "especialista", "derivacion", "derivación", "pedir", "solicitar", "evaluacion", "evaluación"]
+    keywords: ["interconsulta", "interconsultas", "consulta", "consultas", "especialista", "especialistas", "derivacion", "derivación", "especialidad", "neurologia", "neurología", "neuro", "convulsion", "musculo", "músculo", "gastrointestinal", "gastroenterologia", "gastroenterología", "gastro", "intestin", "diarrea", "estomago", "estómago", "dermatologia", "dermatología", "dermato", "piel", "eccema", "dermatitis", "cardiologia", "cardiología", "cardio", "corazon", "corazón", "soplo", "neumonologia", "neumonología", "hematologia", "hematología", "infectologia", "infectología"],
+    indicators: ["interconsulta", "interconsultas", "consulta", "consultas", "especialista", "especialistas", "derivacion", "derivación", "pedir", "solicitar", "evaluacion", "evaluación"]
   },
   {
     id: "autoanticuerpos",
@@ -103,8 +103,8 @@ const STUDY_TYPES = [
     color: "#06b6d4",
     placeholder: "Ej: Tétanos, Neumococo, Hepatitis B, Difteria...",
     description: "Títulos de anticuerpos pre/post vacunación y evaluación de respuesta protectora",
-    keywords: ["vacuna", "vacunacion", "vacunación", "titulo", "título", "inmunizacion", "inmunización", "tetanos", "tétanos", "neumococo", "hepatitis", "difteria"],
-    indicators: ["vacuna", "vacunacion", "vacunación", "titulo", "título", "inmunizacion", "inmunización"]
+    keywords: ["vacuna", "vacunas", "vacunacion", "vacunación", "vacunaciones", "titulo", "título", "titulos", "títulos", "inmunizacion", "inmunización", "tetanos", "tétanos", "neumococo", "hepatitis", "difteria"],
+    indicators: ["vacuna", "vacunas", "vacunacion", "vacunación", "vacunaciones", "titulo", "título", "titulos", "títulos", "inmunizacion", "inmunización"]
   },
   {
     id: "segregacion",
@@ -161,6 +161,16 @@ const STUDY_TYPES = [
       }
     ],
     keywords: ["funcional", "ensayo", "proliferacion", "proliferación", "citotoxicidad", "citoquina", "citocina", "degranulacion", "degranulación", "interferon", "interferón", "via del interferon"]
+  },
+  {
+    id: "ecografia",
+    label: "Ecografía Abdominal",
+    icon: "🩻",
+    color: "#14b8a6",
+    description: "Evaluación ecográfica de órganos abdominales (bazo, hígado, etc.)",
+    fixed: true,
+    fixedTarget: "completa",
+    keywords: ["ecografia", "ecografía", "ultrasonido", "bazo", "esplenomegalia", "higado", "hígado", "hepatomegalia", "abdominal", "ecografía abdominal", "ecografia abdominal"]
   }
 ];
 
@@ -176,190 +186,17 @@ const DEFAULT_DATA = {
 
   students: [
     { name: "Ana García", email: "ana.garcia@ejemplo.com", tokensLeft: TOKENS_PER_STUDENT, log: [] },
-    { name: "Carlos López", email: "carlos.lopez@ejemplo.com", tokensLeft: TOKENS_PER_STUDENT, log: [] },
+    { name: "Carlos X", email: "carlos.lopez@ejemplo.com", tokensLeft: TOKENS_PER_STUDENT, log: [] },
     { name: "María Fernández", email: "maria.fernandez@ejemplo.com", tokensLeft: TOKENS_PER_STUDENT, log: [] },
     { name: "Estudiante Demo", email: "demo@demo.com", tokensLeft: TOKENS_PER_STUDENT, log: [] },
     { name: "Jonathan Zaiat", email: "jzaiat@gmail.com", tokensLeft: TOKENS_PER_STUDENT, log: [] },
     { name: "Belen Almejun", email: "mbalmejun@gmail.com", tokensLeft: TOKENS_PER_STUDENT, log: [] },
+    { name: "Nico Di Biasi", email: "dibiasinicolasar@gmail.com", tokensLeft: TOKENS_PER_STUDENT, log: [] },
+
 
   ],
 
-  cases: [
-    {
-      id: "caso-01",
-      name: "Caso 1",
-      description: "",
-      status: "published",
-      // Datos demográficos del paciente
-      patient: {
-        age: "8 años",
-        gender: "Masculino",
-        symptomOnset: "Desde los 6 meses de vida"
-      },
-      results: {
-        // Info general
-        "info-paciente::general": "INFORMACIÓN DEL PACIENTE:\n• Edad: 60 años\n• Género: Masculino\n• Sin historia familiar conocida de inmunodeficiencia al momento de la consulta inicial.",
-        "info-paciente::edad y género": "Edad: 8 años. Género: Masculino.",
-        "info-paciente::motivo de consulta": "Motivo de consulta: Infecciones bacterianas.",
-        "info-paciente::inicio de síntomas": "Inicio de síntomas: 6 meses de vida.\n Infecciones bacterianas severas a repetición desde los 6 meses (otitis media). Requirieron hospitalizaciones repetidas.",
-        "info-paciente::infecciones": "Infecciones: Infecciones bacterianas recurrentes (neumonías, otitis media, sinusitis) desde los 6 meses de vida. Cuadros severos que requirieron múltiples hospitalizaciones.",
-
-        // Antecedentes
-        "antecedentes::historia completa": "ANTECEDENTES FAMILIARES (completos):\nPaciente masculino, primogénito. Padres sanos, no consanguíneos.\nUn tío materno (hermano de la madre) falleció a los 4 años de neumonía de repetición. Sin otro familiar con historia similar documentada.\nAbuela materna sana. Abuelo materno sano.\nCONCLUSIÓN: Historia compatible con herencia ligada al X.",
-        "antecedentes::parentales": "ANTECEDENTES — PADRES:\n• Padre (♂, 38 años): sano, sin enfermedades crónicas ni infecciones recurrentes.\n• Madre (♀, 36 años): sana. Refiere un hermano (tío del paciente) fallecido a los 4 años por neumonía de repetición.\nNO CONSANGUÍNEOS. Sin otras patologías conocidas.",
-        "antecedentes::hermanos": "ANTECEDENTES — HERMANOS/HERMANAS:\nPaciente es primogénito. SIN HERMANOS conocidos hasta la fecha de consulta.",
-
-        // Western Blot
-        "western-blot::BTK": "Western Blot para BTK:\nNo se observa banda en el peso molecular esperado (~76 kDa). Control positivo presente y correcto.\nRESULTADO: Ausencia completa de expresión de BTK.",
-        "western-blot::AKT": "Western Blot para AKT:\nBanda presente a ~60 kDa. Intensidad normal respecto al control.\nRESULTADO: Expresión normal de AKT.",
-
-        // Hemograma
-        "hemograma::completo": "Hemograma completo:\n• Leucocitos: 4.200/μL (↓ leve)\n• Linfocitos: 850/μL (↓↓ marcado, VN: 1500–4000)\n• Neutrófilos: 3.100/μL (normal)\n• Hemoglobina: 12.8 g/dL (normal)\n• Plaquetas: 230.000/μL (normal)\nCONCLUSIÓN: Linfopenia significativa.",
-
-        // Citometría
-        // Citometría
-        "citometria::CD19 B cells": "Citometría — Linfocitos B (CD19+):\nCD19+ = 0.1% (↓↓ marcadamente reducido, VN: 6–25%)\nLas células B son prácticamente indetectables.\nCONCLUSIÓN: Ausencia de linfocitos B circulantes.",
-        "citometria::CD20 B cells": "Citometría — Linfocitos B (CD20+):\nCD20+ = 0.1% (↓↓ marcadamente reducido, VN: 6–25%)\nLas células B maduras son prácticamente indetectables.\nCONCLUSIÓN: Ausencia de linfocitos B circulantes CD20+.",
-        "citometria::CD3 T cells": "Citometría — Linfocitos T (CD3+):\nCD3+ = 72% (normal, VN: 60–85%)\nCONCLUSIÓN: Población de linfocitos T totales en rango normal.",
-        "citometria::CD4 T cells": "Citometría — Linfocitos T CD4+:\nCD4+ = 28% (normal, VN: 25–45%)\nCONCLUSIÓN: Población T cooperadora normal.",
-        "citometria::CD8 T cells": "Citometría — Linfocitos T CD8+:\nCD8+ = 31% (normal, VN: 20–35%)\nCONCLUSIÓN: Linfocitos T citotóxicos en rango normal.",
-        "citometria::LB memoria": "Citometría — Linfocitos B de Memoria (CD19+CD27+):\nCD19+CD27+ = 0.0% (↓↓ marcadamente reducido, VN: 1.5–10%)\nLas células B de memoria con cambio de isotipo son indetectables.\nCONCLUSIÓN: Ausencia de linfocitos B de memoria circulantes.",
-
-        // PCR
-        "pcr::BTK mRNA": "RT-PCR para BTK mRNA:\nNo se detecta producto de amplificación en la muestra del paciente. Control positivo amplifica correctamente.\nCONCLUSIÓN: Ausencia de transcripto de BTK.",
-
-        // ELISA / Dosaje Ig
-        "elisa::IgG": "Dosaje — Inmunoglobulina G (IgG):\nIgG sérica = 142 mg/dL (↓↓↓ severamente reducida, VN: 700–1600 mg/dL)\nCONCLUSIÓN: Hipogammaglobulinemia severa.",
-        "elisa::IgM": "Dosaje — Inmunoglobulina M (IgM):\nIgM sérica = 18 mg/dL (↓, VN: 40–230 mg/dL)\nCONCLUSIÓN: IgM disminuida.",
-        "elisa::IgA": "Dosaje — Inmunoglobulina A (IgA):\nIgA sérica = 5 mg/dL (↓↓, VN: 70–400 mg/dL)\nCONCLUSIÓN: IgA prácticamente indetectable.",
-
-        // Vacunas
-        "vacuna::Tétanos": "Respuesta a vacuna — Tétanos:\nTítulo pre: < 0.01 UI/mL · Título post: 0.02 UI/mL\nNivel protector: ≥ 0.1 UI/mL\nRESULTADO: AUSENCIA DE RESPUESTA VACUNAL. No se generaron anticuerpos protectores.",
-        "vacuna::Hepatitis B": "Respuesta a vacuna — Hepatitis B:\nAnti-HBs post: < 10 mUI/mL (VN protector: ≥ 10 mUI/mL)\nRESULTADO: SIN RESPUESTA. Paciente no respondedor.",
-        "vacuna::Neumococo": "Respuesta a vacuna — Neumococo 23v:\nTítulos anti-polisacáridos: indetectables para todos los serotipos evaluados.\nRESULTADO: AUSENCIA TOTAL. Sin capacidad de responder a antígenos T-independientes.",
-
-        // Segregación
-        "segregacion::BTK": "SEGREGACIÓN FAMILIAR — Gen BTK (Xq21.3) · Herencia ligada al X:\n\n• Probando (♂, 8 años): AFECTADO — hemicigoto mutación c.1684C>T (p.Arg562Cys)\n• Madre (♀, 38 años): PORTADORA — heterocigota. Asintomática.\n• Hermana (♀, 5 años): PORTADORA — heterocigota. Asintomática.\n• Padre (♂, 40 años): No portador (no aplica cromosoma X).\n• Tío materno (♂, fallecido): Probable AFECTADO (no disponible para estudio).\n• Abuela materna (♀): PORTADORA — heterocigota. Asintomática.\n\nCONCLUSIÓN: Herencia ligada al X confirmada. Asesoramiento genético indicado.",
-
-        // Ensayos funcionales
-        "funcional::proliferacion::PHA": "Proliferación Celular — PHA:\nÍndice de estimulación (IE): 1.2 (↓↓, VN: IE > 10)\nCD4+ Ki67+: 3% · CD8+ Ki67+: 4%\nCONCLUSIÓN: Respuesta proliferativa T CONSERVADA. El defecto es humoral (XLA afecta células B, no T).",
-        "funcional::proliferacion::anti-CD3": "Proliferación — anti-CD3:\nIE: 18.4 (normal, VN: > 10)\nCONCLUSIÓN: Proliferación T normal ante estímulo de TCR.",
-        "funcional::citotoxicidad::NK": "Citotoxicidad NK (ratio 10:1):\nActividad lítica: 38% (VN: 20–50%)\nCONCLUSIÓN: Función NK conservada.",
-        "funcional::via-interferon::STAT1": "Vía del Interferón — STAT1:\nFosfopSTAT1 tras IFN-γ (30 min): 62% (normal, VN: > 50%)\nFosfopSTAT1 tras IFN-α: 58% (normal)\nCONCLUSIÓN: Señalización por STAT1 conservada. No hay defecto en la vía JAK-STAT del interferón.",
-        // Interconsultas
-        "interconsulta::Dermatología": "Dermatología: Paciente refiere eccema leve transitorio en brazos. Sin lesiones activas relevantes al examen físico.",
-        "interconsulta::Neurología": "Neurología: Examen neurológico completo normal. Sin alteraciones ni signos de organicidad.",
-        "interconsulta::Gastrointestinal": "Gastrointestinal: Sin síntomas de malabsorción ni diarrea crónica. Examen físico abdominal normal.",
-        "interconsulta::Cardiología": "Cardiología: Examen cardiovascular normal. Ruidos cardíacos netos, normofrecuentes, sin soplos.",
-        // Autoanticuerpos
-        "autoanticuerpos::ANA": "Anticuerpos Antinucleares (ANA): Negativo (no reactivo). (No se observan títulos de autoanticuerpos circulantes).",
-        "autoanticuerpos::anti-DNA": "Anticuerpos anti-DNA de doble cadena: Negativo."
-      }
-    },
-
-    {
-      id: "caso-02",
-      name: "Caso 2 — Linfadenopatía generalizada en adulto joven",
-      description: "Mujer con linfadenopatía generalizada, esplenomegalia y fiebre de origen desconocido durante los últimos 4 meses.",
-      status: "published",
-      patient: {
-        age: "24 años",
-        gender: "Femenino",
-        symptomOnset: "4 meses de evolución"
-      },
-      results: {
-        "info-paciente::general": "INFORMACIÓN DEL PACIENTE:\n• Edad: 24 años\n• Género: Femenino\n• Inicio de síntomas: Hace 4 meses (linfadenopatias progresivas, fiebre vespertina, sudoración nocturna)\n• Motivo de consulta: Linfadenopatia generalizada + esplenomegalia detectada en ecografia. Pérdida de 4 kg en 3 meses.",
-        "info-paciente::edad y género": "Edad: 24 años. Género: Femenino.",
-        "info-paciente::inicio de síntomas": "Inicio de síntomas: Hace 4 meses.\nPrimeras manifestaciones: aparición progresiva de ganglios inflamados en cuello, axilas e ingles. Fiebre vespertina (hasta 38.2 °C), sudoración nocturna empapante y pérdida de peso de 4 kg en 3 meses.",
-        "info-paciente::motivo de consulta": "Motivo de consulta: Linfadenopatia generalizada con esplenomegalia (ecografia abdominal). Fiebre de origen desconocido y pérdida de peso involuntaria. Solicita estudio de causa hematológica vs infecciosa vs autoinmune.",
-
-        "antecedentes::historia completa": "ANTECEDENTES FAMILIARES (completos):\nPadre: DM2. Madre: artritis reumatoidea.\nHermano (27 años): sano.\nAbuela paterna: 'cáncer de sangre' (sin documentar) a los 68 años.\nTío paterno: Linfoma no Hodgkin a los 55 años.\nCONCLUSIÓN: Antecedente de neoplasia hematológica en rama paterna.",
-        "antecedentes::parentales": "ANTECEDENTES — PADRES:\n• Padre (♂, 54 años): DM2 en tratamiento. Refiere un hermano (tío paterno) con Linfoma no Hodgkin a los 55 años.\n• Madre (♀, 51 años): artritis reumatoidea diagnosticada a los 40 años, en remisión con MTX.\nNo consanguíneos.",
-        "antecedentes::hermanos": "ANTECEDENTES — HERMANOS/HERMANAS:\n• Hermano (♂, 27 años): sano, sin patologías crónicas ni infecciones a repetición.\nSolo 1 hermano conocido. No hay hermanas.",
-
-        "hemograma::completo": "Hemograma:\n• Leucocitos: 18.400/μL (↑↑)\n• Linfocitos: 12.800/μL (↑↑ marcada linfocitosis)\n• Neutrófilos: 4.100/μL (normal)\n• Hemoglobina: 10.2 g/dL (↓)\n• Plaquetas: 98.000/μL (↓)\nCONCLUSIÓN: Linfocitosis marcada + anemia + trombocitopenia.",
-
-        "citometria::CD19 B cells": "Citometría — B (CD19+):\nCD19+ = 68% (↑↑) con co-expresión de CD5.\nCONCLUSIÓN: Expansión clonal B, fenotipo sugestivo de LLC.",
-        "citometria::CD5 CD19": "Citometría — CD5+CD19+:\n68% de linfocitos son CD5+CD19+, CD23+, CD38−, IgS kappa restringida.\nCONCLUSIÓN: Fenotipo clásico de LLC-B.",
-        "citometria::CD4 T cells": "Citometría — T CD4+:\n8% (↓ relativo por expansión B). CD4/CD8: 0.6 (invertida).\nCONCLUSIÓN: Reducción relativa T cooperadores.",
-
-        "elisa::IgG": "Dosaje — IgG: 480 mg/dL (↓, VN: 700–1600)\nCONCLUSIÓN: Hipogammaglobulinemia secundaria.",
-
-        "western-blot::p53": "Western Blot — p53:\nBanda a ~53 kDa con intensidad aumentada (acumulación proteica).\nCONCLUSIÓN: Sobreexpresión de p53 compatible con mutación con pérdida de función.",
-
-        "vacuna::Neumococo": "Respuesta — Neumococo:\nTítulos bajos para 12/23 serotipos. Compatible con hipogammaglobulinemia secundaria.\nRESULTADO: RESPUESTA SUBÓPTIMA.",
-
-        "segregacion::TP53": "SEGREGACIÓN — TP53 (17p13.1):\nMutación c.817C>T hallada en células leucémicas: origen SOMÁTICO (adquirido).\n• Madre: sin mutación germinal · Padre: sin mutación germinal.\nCONCLUSIÓN: Mutación somática. No hereditaria. No requiere cribado familiar.",
-
-        "funcional::proliferacion::PHA": "Proliferación — PHA:\nIE: 6.2 (↓ levemente, VN: > 10). Interferido por la linfocitosis B dominante.\nCONCLUSIÓN: Función T proliferativa conservada con señal interferida.",
-        "funcional::citotoxicidad::NK": "Citotoxicidad NK (10:1):\nActividad lítica: 18% (↓ leve, VN: 20–50%)\nCONCLUSIÓN: Función NK levemente disminuida.",
-        "funcional::via-interferon::JAK1": "Vía del Interferón — JAK1:\nNo se detecta fosfo-JAK1 tras estimulación con IFN-α.\nCONCLUSIÓN: Defecto en señalización JAK1 en contexto tumoral. No necesariamente germinal.",
-        // Interconsultas
-        "interconsulta::Dermatología": "Dermatología: No se observan lesiones cutáneas activas ni eccemas.",
-        "interconsulta::Neurología": "Neurología: Examen neurológico sin particularidades.",
-        "interconsulta::Gastrointestinal": "Gastrointestinal: Sin alteraciones en el ritmo evacuatorio, no se refiere dolor abdominal recurrente.",
-        "interconsulta::Cardiología": "Cardiología: Soplo sistólico eyectivo funcional fisiológico. ECG dentro de límites normales.",
-        // Autoanticuerpos
-        "autoanticuerpos::ANA": "ANA por IFI: Positivo (título 1:160, patrón moteado). Compatible con componente autoinmune secundario.",
-        "autoanticuerpos::anti-DNA": "anti-DNA de doble cadena: Negativo."
-      }
-    },
-
-    {
-      id: "caso-03",
-      name: "Caso 3 — Niña con eccema, trombocitopenia e infecciones",
-      description: "Niña con eccema severo desde los primeros meses de vida, trombocitopenia y múltiples infecciones recurrentes.",
-      status: "draft",
-      patient: {
-        age: "3 años",
-        gender: "Femenino",
-        symptomOnset: "Desde el primer mes de vida"
-      },
-      results: {
-        "info-paciente::general": "INFORMACIÓN DEL PACIENTE:\n• Edad: 3 años\n• Género: Femenino\n• Inicio de síntomas: Primer mes de vida (eccema severo). Trombocitopenia detectada al mes de vida.\n• Motivo de consulta: Eccema resistente a tratamiento + otitis media recurrente (6 episodios en 2 años) + plaquetas bajas con volumen reducido.",
-        "info-paciente::edad y género": "Edad: 3 años. Género: Femenino.",
-        "info-paciente::inicio de síntomas": "Inicio de síntomas: Desde el primer mes de vida.\nPrimeras manifestaciones: eccema severo y generalizado resistente a corticoides tópicos desde el mes de vida. Trombocitopenia detectada en hemograma del primer mes. Otitis media recurrente a partir de los 8 meses (6 episodios en 2 años).",
-        "info-paciente::motivo de consulta": "Motivo de consulta: Niña con eccema, trombocitopenia e infecciones recurrentes. Referida por sospecha de inmunodeficiencia primaria asociada a trombocitopenia.",
-
-        "antecedentes::historia completa": "ANTECEDENTES FAMILIARES (completos):\nTío materno (32 años): trombocitopenia crónica y eccema leve desde la infancia (sin diagnóstico).\nAbuela materna: sana. Sin consanguinidad parental.\nCONCLUSIÓN: Antecedente en tío materno. Compatible con herencia ligada al X (WAS).",
-        "antecedentes::parentales": "ANTECEDENTES — PADRES:\n• Madre (♀, 31 años): sana. Refiere un hermano (tío materno, 32 años) con trombocitopenia y eccema crónicos no diagnosticados.\n• Padre (♂, 33 años): sano, sin antecedentes relevantes.\nNo consanguíneos.",
-        "antecedentes::hermanos": "ANTECEDENTES — HERMANOS/HERMANAS:\n• Hermano (♂, 6 años): sano, sin eccema, sin trombocitopenia, sin infecciones recurrentes. Hemograma y plaquetas normales.\nSolo 1 hermano conocido. Hermano no afectado.",
-
-        "hemograma::completo": "Hemograma:\n• Plaquetas: 42.000/μL (↓↓)\n• VPM: 5.2 fL (↓↓, VN: 7.5–11 fL) — microtrombocitopenia\n• Hemoglobina: 9.8 g/dL (↓ anemia leve)\n• Leucocitos: 7.800/μL (normal)\nCONCLUSIÓN: Microtrombocitopenia severa.",
-
-        "citometria::CD4 T cells": "Citometría — T CD4+: 22% (↓ leve)\nCONCLUSIÓN: Linfopenia T CD4+ leve.",
-        "citometria::CD8 T cells": "Citometría — T CD8+: 18% (↓, VN: 20–35%)\nCONCLUSIÓN: Linfopenia T CD8+ moderada.",
-        "citometria::CD19 B cells": "Citometría — B CD19+: 12% (normal)\nCONCLUSIÓN: Linfocitos B normales.",
-
-        "western-blot::WASp": "Western Blot — WASp:\nNo se detecta banda a ~53 kDa. Control positivo correcto.\nRESULTADO: Ausencia de expresión de WASp.",
-
-        "elisa::IgG": "Dosaje IgG: 920 mg/dL (normal)\nCONCLUSIÓN: IgG normal.",
-        "elisa::IgA": "Dosaje IgA: 210 mg/dL (↑ elevada, VN 3 años: 20–120 mg/dL)\nCONCLUSIÓN: IgA elevada.",
-        "elisa::IgM": "Dosaje IgM: 28 mg/dL (↓)\nCONCLUSIÓN: IgM disminuida.",
-
-        "pcr::WAS mRNA": "RT-PCR WAS mRNA: transcripto presente pero reducido (~40% del control).\nCONCLUSIÓN: Expresión reducida, compatible con mutación hipomórfica.",
-
-        "vacuna::Tétanos": "Respuesta — Tétanos:\nTítulo post: 0.18 UI/mL (limítrofe, VN: ≥ 0.1 UI/mL)\nRESULTADO: RESPUESTA SUBÓPTIMA.",
-        "vacuna::Neumococo": "Respuesta — Neumococo conjugada:\nAdecuada para 8/13 serotipos (respuesta T-dependiente parcialmente conservada).\nRESULTADO: RESPUESTA PARCIAL.",
-
-        "segregacion::WAS": "SEGREGACIÓN — Gen WAS (Xp11.22) · Ligado al X:\n\n• Probanda (♀, 3 años): AFECTADA — hemicigota (fenotipo inusual en mujer → sesgo extremo de inactivación X)\n• Madre (♀, 31 años): PORTADORA — c.559C>T heterocigota. Asintomática.\n• Padre (♂): No portador.\n• Hermano (♂, 6 años): No afectado (alelo normal).\n• Tío materno (♂, 32 años): AFECTADO LEVE — hemicigoto, misma mutación hipomórfica.\n\nCONCLUSIÓN: Mutación hipomórfica en WAS con expresión variable.",
-
-        "funcional::proliferacion::PHA": "Proliferación — PHA:\nIE: 4.8 (↓↓, VN: > 10)\nCONCLUSIÓN: Respuesta T reducida, compatible con disfunción de citoesqueleto de actina en WAS.",
-        "funcional::citotoxicidad::NK": "Citotoxicidad NK (10:1): 12% (↓↓, VN: 20–50%)\nCONCLUSIÓN: Función NK significativamente reducida.",
-        "funcional::degranulacion::CD107a": "Degranulación — CD107a (NK):\nCD107a+ post-activación: 8% (↓↓, VN: > 20%)\nCONCLUSIÓN: Defecto de degranulación NK por disfunción del citoesqueleto de actina.",
-        "funcional::citoquinas::IFN-γ": "Citoquinas — IFN-γ intracelular (CD4+/PMA+ionomicina):\n3.2% IFN-γ+ (↓, VN: 10–25%)\nCONCLUSIÓN: Producción reducida. Disfunción Th1.",
-        "funcional::via-interferon::STAT1": "Vía del Interferón — STAT1:\nFosfo-STAT1 tras IFN-γ: 14% (↓↓, VN: > 50%)\nFosfo-STAT1 tras IFN-α: 11% (↓↓)\nCONCLUSIÓN: Señalización por interferón REDUCIDA. Defecto funcional en la vía JAK-STAT en contexto de WAS.",
-        // Interconsultas
-        "interconsulta::Dermatología": "Dermatología: Se constata eccema atópico severo y generalizado, liquenificado, con lesiones de rascado y sobreinfección en flexuras. Prurito intenso.",
-        "interconsulta::Neurología": "Neurología: Examen neurológico normal. Sin signos focales.",
-        "interconsulta::Gastrointestinal": "Gastrointestinal: Episodios intermitentes de diarrea con estrías de sangre (proctocolitis). Frecuencia de deposiciones aumentada.",
-        "interconsulta::Cardiología": "Cardiología: Ruidos cardíacos normales, normofrecuentes, sin soplos.",
-        // Autoanticuerpos
-        "autoanticuerpos::ANA": "Anticuerpos Antinucleares (ANA): Negativo.",
-        "autoanticuerpos::anti-DNA": "Anticuerpos anti-DNA: Negativo."
-      }
-    }
-  ]
+  cases: window.EGC_CASES || []
 };
 
 // ──────────────────────────────────────────────
@@ -494,7 +331,7 @@ function parseNaturalQuery(text) {
     } else if (normalized.includes("herman") || normalized.includes("sibling")) {
       target = "hermanos";
     } else {
-      target = "historia completa";
+      target = "abuelos/tíos";
     }
   } else if (detectedType.id === "interconsulta") {
     // Mapeo directo para especialidades comunes de interconsulta

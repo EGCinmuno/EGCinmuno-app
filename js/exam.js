@@ -127,35 +127,300 @@ function selectCase(c, cardEl) {
   renderHistory();
 }
 
+// ══════════════════════════════════════════
+// MAPA CORPORAL INTERACTIVO - CONFIGURACIÓN Y CLASIFICADOR
+// 
+// ¿CÓMO CONFIGURAR O AGREGAR NUEVAS REGIONES / ICONOS?
+// 1. REGION_METADATA: Define el nombre de la sección, el emoji que aparece, su color y si va en la silueta.
+// 2. getMarkerCoords: Define la posición (X, Y en % de 0 a 100) del botón sobre la silueta.
+// 3. classifyFinding: Clasifica un estudio médico en una región escaneando palabras clave del estudio o del texto del resultado.
+// 4. getFindingsForCase: Agrupa y da formato a la información del caso según las regiones clasificadas.
+// ══════════════════════════════════════════
+
+const REGION_METADATA = {
+  antecedentes: { label: "Antecedentes Familiares", icon: "🌳", color: "var(--primary-light)" },
+  head: { label: "Neurología", icon: "🧠", color: "var(--warning)" },
+  lungs: { label: "Sistema Respiratorio", icon: "🫁", color: "var(--info)" },
+  cardio: { label: "Sistema Cardiovascular", icon: "❤️", color: "var(--danger)" },
+  hemato: { label: "Hematopoyético & Inmunoglobulinas", icon: "🩸", color: "var(--primary-light)" },
+  vacunas: { label: "Respuesta a Vacunas", icon: "💉", color: "var(--info)" },
+  gastro: { label: "Gastrointestinal", icon: "🦠", color: "var(--success)" },
+  dermato: { label: "Piel & Tegumentario", icon: "🩹", color: "#ec4899" },
+  joints: { label: "Sistema Osteoarticular", icon: "🦴", color: "var(--accent-light)" },
+  
+  // Regiones específicas fuera de la silueta (se anotan debajo):
+  funcional: { label: "Ensayos Funcionales", icon: "⚙️", color: "var(--accent-light)", onSilhouette: false },
+  western: { label: "Detección de Proteínas (Western Blot)", icon: "🧪", color: "var(--primary-light)", onSilhouette: false },
+  molecular: { label: "Estudios de Biología Molecular", icon: "🧬", color: "var(--primary-light)", onSilhouette: false },
+  genetica: { label: "Segregación Genética", icon: "👥", color: "var(--accent-light)", onSilhouette: false }
+};
+
+function getMarkerCoords(region) {
+  const coords = {
+    antecedentes: { x: 50, y: -3 }, // Logo arriba de la cabeza
+    head: { x: 50, y: 9 },         // Centro de la cabeza
+    lungs: { x: 58, y: 25 },        // Pulmón derecho
+    cardio: { x: 45, y: 24 },       // Corazón (pecho izquierdo)
+    hemato: { x: 79, y: 30 },       // Brazo derecho
+    vacunas: { x: 21, y: 30 },      // Brazo izquierdo
+    gastro: { x: 50, y: 36 },       // Abdomen
+    dermato: { x: 30, y: 17 },      // Hombro izquierdo
+    joints: { x: 41, y: 67 }        // Rodilla izquierda
+  };
+  return coords[region] || { x: 50, y: 50 };
+}
+
+function classifyFinding(typeId, subtypeId, target, resultText) {
+  const searchStr = `${typeId || ""} ${subtypeId || ""} ${target || ""} ${resultText || ""}`.toLowerCase();
+  
+  // Categorías por tipo directo:
+  if (typeId === "info-paciente") return "general";
+  if (typeId === "ecografia") return "gastro";
+  if (typeId === "pcr") return "molecular";
+  if (typeId === "western-blot") return "western";
+  if (typeId === "funcional") return "funcional";
+  if (typeId === "segregacion") return "genetica";
+  if (typeId === "antecedentes") return "antecedentes";
+  if (typeId === "vacuna") return "vacunas";
+  if (typeId === "hemograma" || typeId === "citometria" || typeId === "elisa" || typeId === "autoanticuerpos") {
+    return "hemato";
+  }
+  
+  // Clasificación por palabras clave (Interconsultas y otros targets):
+  if (searchStr.includes("gastro") || searchStr.includes("diarrea") || searchStr.includes("salmonel") || searchStr.includes("esplenomeg") || searchStr.includes("abdominal") || searchStr.includes("bazo") || searchStr.includes("copro") || searchStr.includes("proctocolitis") || searchStr.includes("deposicion")) {
+    return "gastro";
+  }
+  if (searchStr.includes("neumon") || searchStr.includes("bor ") || searchStr.includes("broncoespasmo") || searchStr.includes("respirator") || searchStr.includes("pulmon") || searchStr.includes("torax") || searchStr.includes("tórax") || searchStr.includes("sibilancia")) {
+    return "lungs";
+  }
+  if (searchStr.includes("otitis") || searchStr.includes("sinusit") || searchStr.includes("oido") || searchStr.includes("oído") || searchStr.includes("oídos") || searchStr.includes("cabeza") || searchStr.includes("cerebro")) {
+    return "head";
+  }
+  if (searchStr.includes("eccema") || searchStr.includes("dermat") || searchStr.includes("piel") || searchStr.includes("cutan") || searchStr.includes("eczema") || searchStr.includes("prurito") || searchStr.includes("rascado")) {
+    return "dermato";
+  }
+  if ((searchStr.includes("artrit") || searchStr.includes("articulac") || searchStr.includes("reumato") || searchStr.includes("articular")) && !searchStr.includes("particularidades")) {
+    return "joints";
+  }
+  if (searchStr.includes("cardio") || searchStr.includes("soplo") || searchStr.includes("corazon") || searchStr.includes("corazón") || searchStr.includes("ecocardiograma") || searchStr.includes("ecg")) {
+    return "cardio";
+  }
+  if (searchStr.includes("neuro") || searchStr.includes("neurología") || searchStr.includes("neurologia")) {
+    return "head";
+  }
+  
+  return "hemato";
+}
+
+function isGenericTarget(typeId, target) {
+  const normalized = normalize(target);
+  const genericWords = [
+    "vacuna", "vacunas", "estudio", "estudios", "analisis", "análisis", 
+    "test", "ensayo", "ensayos", "prueba", "pruebas", "pcr", "pcr-rt", 
+    "western", "blot", "western blot", "elisa", "dosaje", "dosajes", 
+    "citometria", "citometría", "flow", "facs", "segregacion", "segregación",
+    "anticuerpo", "anticuerpos", "autoanticuerpo", "autoanticuerpos",
+    "interconsulta", "interconsultas", "derivacion", "derivación"
+  ];
+  return genericWords.includes(normalized);
+}
+
+function getFindingsForCase(caseId) {
+  const data = getData();
+  const c = data.cases.find(x => x.id === caseId);
+  if (!c) return {};
+
+  const hasUnlockedOnset = session.log.some(entry => 
+    entry.caseId === caseId && 
+    entry.typeId === "info-paciente" && 
+    normalize(entry.target) === "inicio de sintomas" && 
+    entry.resultFound
+  );
+
+  const findings = {
+    general: {
+      title: "Datos Generales",
+      icon: "🧑‍⚕️",
+      text: `• <strong>Edad:</strong> ${c.patient.age || "—"}\n• <strong>Género:</strong> ${c.patient.gender || "—"}${hasUnlockedOnset ? `\n• <strong>Inicio de síntomas:</strong> ${c.patient.symptomOnset || "—"}` : ""}\n\n`
+    }
+  };
+
+  // Buscar descubrimientos en el historial de sesión de este estudiante
+  session.log.forEach(entry => {
+    if (entry.caseId === caseId && entry.resultFound) {
+      const region = classifyFinding(entry.typeId, entry.subtypeId, entry.target, entry.resultText);
+      if (!findings[region]) {
+        findings[region] = {
+          title: REGION_METADATA[region].label,
+          icon: REGION_METADATA[region].icon,
+          text: ""
+        };
+      }
+      findings[region].text += `• <strong>${entry.studyType}${entry.target ? ` (${entry.target})` : ''}:</strong>\n${entry.resultText}\n\n`;
+    }
+  });
+
+  return findings;
+}
+
+function highlightFindingGroup(region) {
+  const el = document.getElementById(`fg-${region}`);
+  if (!el) return;
+
+  // Quitar resaltados previos
+  document.querySelectorAll(".findings-group").forEach(g => g.classList.remove("highlighted"));
+
+  // Resaltar el grupo actual
+  el.classList.add("highlighted");
+  el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+
+  // Parpadeo visual
+  el.style.outline = `2px dashed ${REGION_METADATA[region].color}`;
+  setTimeout(() => {
+    el.style.outline = "none";
+  }, 1500);
+}
+
 function renderCaseInfoBanner(c) {
   const banner = document.getElementById("case-info-banner");
   if (!banner) return;
   const p = c.patient;
   if (!p) { banner.style.display = "none"; return; }
   banner.style.display = "flex";
-  // Buscar descubrimientos para este caso
-  const discoveries = session.log
-    .filter(entry => entry.caseId === c.id && entry.resultFound)
-    .map(entry => `<strong>${entry.studyType}${entry.target ? ` (${entry.target})` : ''}:</strong> ${entry.resultText || '<em>(Información obtenida previamente)</em>'}`)
-    .join("<br><br>");
 
-  const descriptionHTML = c.description +
-    (discoveries ? `<br><br><div class="discoveries-section" style="margin-top:1rem; padding-top:1rem; border-top:1px dashed rgba(255,255,255,0.2);"><strong>🔍 Información obtenida:</strong><br><br>${discoveries}</div>` : "");
+  // Obtener los descubrimientos agrupados por región
+  const findings = getFindingsForCase(c.id);
 
-  banner.innerHTML = `
-    <div class="case-info-pill">
-      <span class="cip-label">🧑‍⚕️ Edad</span>
-      <span class="cip-value">${p.age || "—"}</span>
-    </div>
-    <div class="case-info-pill">
-      <span class="cip-label">⚧ Género</span>
-      <span class="cip-value">${p.gender || "—"}</span>
-    </div>
-    <div class="case-info-pill" style="flex:4">
-      <span class="cip-label">📝 Descripción clínica</span>
-      <span class="cip-value">${descriptionHTML}</span>
+  // Determinar qué regiones están activas (tienen al menos un hallazgo)
+  const activeRegions = Object.keys(findings).filter(r => r !== "general");
+
+  // Elegir silueta según el género
+  const isFemale = p.gender && p.gender.toLowerCase() === "femenino";
+
+  // Detalle de la silueta SVG (Holograma médico geométrico)
+  const headCircle = `<circle cx="50" cy="20" r="10" fill="rgba(99, 102, 241, 0.04)" stroke="var(--border-active)" stroke-width="1.5" />`;
+
+  const bodyDetails = isFemale
+    ? `
+      <!-- Cuello -->
+      <line x1="50" y1="30" x2="50" y2="38" stroke="var(--border-active)" stroke-width="1.5" />
+      <!-- Clavícula -->
+      <line x1="35" y1="38" x2="65" y2="38" stroke="var(--border-active)" stroke-width="1.5" stroke-linecap="round" />
+      <!-- Tronco femenino (entallado) -->
+      <path d="M35 38 L65 38 L60 70 L65 105 L35 105 L40 70 Z" fill="rgba(99, 102, 241, 0.03)" stroke="var(--border-active)" stroke-width="1.5" stroke-linejoin="round" />
+      <!-- Brazos -->
+      <line x1="35" y1="38" x2="22" y2="95" stroke="var(--border-active)" stroke-width="1.5" stroke-linecap="round" />
+      <line x1="65" y1="38" x2="78" y2="95" stroke="var(--border-active)" stroke-width="1.5" stroke-linecap="round" />
+      <!-- Piernas -->
+      <line x1="42" y1="105" x2="40" y2="200" stroke="var(--border-active)" stroke-width="1.5" stroke-linecap="round" />
+      <line x1="58" y1="105" x2="60" y2="200" stroke="var(--border-active)" stroke-width="1.5" stroke-linecap="round" />
+    `
+    : `
+      <!-- Cuello -->
+      <line x1="50" y1="30" x2="50" y2="38" stroke="var(--border-active)" stroke-width="1.5" />
+      <!-- Clavícula -->
+      <line x1="33" y1="38" x2="67" y2="38" stroke="var(--border-active)" stroke-width="1.5" stroke-linecap="round" />
+      <!-- Tronco masculino -->
+      <path d="M33 38 L67 38 L64 70 L64 105 L36 105 L36 70 Z" fill="rgba(99, 102, 241, 0.03)" stroke="var(--border-active)" stroke-width="1.5" stroke-linejoin="round" />
+      <!-- Brazos -->
+      <line x1="33" y1="38" x2="20" y2="95" stroke="var(--border-active)" stroke-width="1.5" stroke-linecap="round" />
+      <line x1="67" y1="38" x2="80" y2="95" stroke="var(--border-active)" stroke-width="1.5" stroke-linecap="round" />
+      <!-- Piernas -->
+      <line x1="40" y1="105" x2="38" y2="200" stroke="var(--border-active)" stroke-width="1.5" stroke-linecap="round" />
+      <line x1="60" y1="105" x2="62" y2="200" stroke="var(--border-active)" stroke-width="1.5" stroke-linecap="round" />
+    `;
+
+  const specialRegions = activeRegions.filter(r => REGION_METADATA[r].onSilhouette === false);
+  const specialStudiesHTML = specialRegions.length > 0
+    ? `
+      <div class="special-studies-silhouette">
+        <div class="special-studies-title">Estudios Especiales</div>
+        <div class="special-studies-tags">
+          ${specialRegions.map(r => `
+            <div class="special-study-tag" onclick="highlightFindingGroup('${r}')" title="${REGION_METADATA[r].label} (Click para ver detalles)">
+              <span class="special-study-icon">${REGION_METADATA[r].icon}</span>
+              <span class="special-study-label">${REGION_METADATA[r].label}</span>
+            </div>
+          `).join("")}
+        </div>
+      </div>
+    `
+    : "";
+
+  // HTML para la columna del mapa corporal
+  const bodyMapHTML = `
+    <div class="body-map-column">
+      <span class="body-map-title">${p.gender || "Paciente"}</span>
+      <div class="body-map-wrapper">
+        <svg class="body-silhouette-svg" viewBox="0 0 100 220">
+          ${headCircle}
+          ${bodyDetails}
+          
+          <!-- Líneas de conexión decorativas de red médica en los marcadores activos -->
+          ${activeRegions
+            .filter(r => REGION_METADATA[r].onSilhouette !== false)
+            .map(r => {
+              const coords = getMarkerCoords(r);
+              return `<line x1="50" y1="55" x2="${coords.x}" y2="${(coords.y * 2.2).toFixed(1)}" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="2,2" />`;
+            }).join("")}
+        </svg>
+
+        <!-- Puntos interactivos overlay (HTML con posicionamiento absoluto) - SOLO SE RENDERIZAN LOS ACTIVOS -->
+        ${Object.keys(REGION_METADATA)
+          .filter(r => REGION_METADATA[r].onSilhouette !== false && activeRegions.includes(r))
+          .map(r => {
+            const coords = getMarkerCoords(r);
+            const label = REGION_METADATA[r].label;
+            const icon = REGION_METADATA[r].icon;
+            return `
+              <div 
+                class="body-marker active"
+                style="left: ${coords.x}%; top: ${coords.y}%;"
+                data-region="${r}"
+                title="${label} (Ver hallazgos)"
+                onclick="highlightFindingGroup('${r}')"
+              >
+                <span style="font-size:0.6rem;z-index:2;color:white;display:flex;align-items:center;justify-content:center;">${icon}</span>
+              </div>
+            `;
+          }).join("")}
+      </div>
+      ${specialStudiesHTML}
     </div>
   `;
+
+  // HTML para la columna de hallazgos
+  const findingsHTML = `
+    <div class="body-findings-column">
+      <!-- Datos Generales -->
+      <div class="findings-group" id="fg-general">
+        <div class="findings-group-header">
+          <span style="font-size:1.1rem;">${findings.general.icon}</span>
+          <span class="findings-group-title">${findings.general.title}</span>
+        </div>
+        <p class="findings-group-text">${findings.general.text}</p>
+      </div>
+
+      <!-- Otros Hallazgos desbloqueados -->
+      ${Object.keys(findings).filter(r => r !== "general").map(r => `
+        <div class="findings-group" id="fg-${r}">
+          <div class="findings-group-header">
+            <span style="font-size:1.1rem;">${findings[r].icon}</span>
+            <span class="findings-group-title" style="color:${REGION_METADATA[r].color};">${findings[r].title}</span>
+          </div>
+          <p class="findings-group-text">${findings[r].text.trim()}</p>
+        </div>
+      `).join("")}
+
+      ${activeRegions.length === 0 ? `
+        <div style="text-align:center;padding:1.5rem;color:var(--text-muted);font-size:0.8rem;border:1px dashed var(--border);border-radius:var(--radius-md);margin-top:0.5rem;">
+          🔍 Solicitá estudios de laboratorio para revelar hallazgos en la figura humana.
+        </div>
+      ` : ""}
+    </div>
+  `;
+
+  banner.innerHTML = bodyMapHTML + findingsHTML;
 }
 
 // ──────────────────────────────────────────────
@@ -233,7 +498,7 @@ function handleFreeQuery() {
   const needsTarget = !parsed.type.fixed &&
     parsed.type.id !== "info-paciente" &&
     parsed.type.id !== "antecedentes" &&
-    !parsed.target;
+    (!parsed.target || isGenericTarget(parsed.type.id, parsed.target));
   const needsSubtype = parsed.type.hasSub && !parsed.subtype;
 
   if (needsTarget || needsSubtype) {
