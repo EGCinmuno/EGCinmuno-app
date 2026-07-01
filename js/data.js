@@ -203,6 +203,7 @@ const DEFAULT_DATA = {
     { name: "Belen Almejun", email: "mbalmejun@gmail.com", tokensLeft: TOKENS_PER_STUDENT, log: [] },
     { name: "Ana Laura Lopez", email: "analopez@gmail.com", tokensLeft: TOKENS_PER_STUDENT, log: [] },
     { name: "Nico Di Biasi", email: "dibiasinicolasar@gmail.com", tokensLeft: TOKENS_PER_STUDENT, log: [] },
+    { name: "Virginia Paolini", email: "demo@gmail.com", tokensLeft: TOKENS_PER_STUDENT, log: [] },
   ],
 
   cases: window.EGC_CASES || []
