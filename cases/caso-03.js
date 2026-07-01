@@ -56,6 +56,9 @@ window.EGC_CASES.push({
     "autoanticuerpos::anti-DNA": "Anticuerpos anti-DNA: Negativo.",
     
     // Ecografía
-    "ecografia::completa": "Ecografía abdominal:\nEsplenomegalia moderada (longitud del bazo 9.8 cm). Hígado y riñones normales sin particularidades. No se evidencia líquido libre."
+    "ecografia::completa": "Ecografía abdominal:\nEsplenomegalia moderada (longitud del bazo 9.8 cm). Hígado y riñones normales sin particularidades. No se evidencia líquido libre.",
+
+    // Tomografía
+    "tomografia::de tórax": "Tomografía de tórax:\nInfiltrados alveolares difusos bilaterales en bases pulmonares, compatibles con proceso infeccioso activo (neumonía bacteriana vs viral). Sin signos de GLILD."
   }
 });

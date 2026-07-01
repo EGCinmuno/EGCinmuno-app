@@ -49,6 +49,9 @@ window.EGC_CASES.push({
     "autoanticuerpos::anti-DNA": "anti-DNA de doble cadena: Negativo.",
     
     // Ecografía
-    "ecografia::completa": "Ecografía abdominal:\nSe observa esplenomegalia marcada (bazo de 18.5 cm de longitud, VN: < 12 cm). Hígado de tamaño y ecoestructura normal, sin lesiones focales. Ausencia de líquido libre en cavidad abdominal."
+    "ecografia::completa": "Ecografía abdominal:\nSe observa esplenomegalia marcada (bazo de 18.5 cm de longitud, VN: < 12 cm). Hígado de tamaño y ecoestructura normal, sin lesiones focales. Ausencia de líquido libre en cavidad abdominal.",
+
+    // Tomografía
+    "tomografia::de tórax": "Tomografía de tórax:\nPresencia de múltiples adenomegalias mediastínicas e hiliares (la mayor de 3.2 cm). Parénquima pulmonar libre de infiltrados."
   }
 });

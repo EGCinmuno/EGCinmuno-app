@@ -53,7 +53,7 @@ window.EGC_CASES.push({
     "vacuna::Neumococo": "Respuesta a vacuna — Neumococo 23v:\nTítulos anti-polisacáridos: indetectables para todos los serotipos evaluados.\n",
 
     // Segregación
-    "segregacion::BTK": "SEGREGACIÓN FAMILIAR — Gen BTK (Xq21.3) · Herencia ligada al X:\n\n• Probando (♂, 8 años): AFECTADO — hemicigoto mutación c.1684C>T (p.Arg562Cys)\n• Madre (♀, 38 años): PORTADORA — heterocigota. Asintomática.\n• Hermana (♀, 5 años): PORTADORA — heterocigota. Asintomática.\n• Padre (♂, 40 años): No portador (no aplica cromosoma X).\n• Tío materno (♂, fallecido): Probable AFECTADO (no disponible para estudio).\n• Abuela materna (♀): PORTADORA — heterocigota. Asintomática.\n",
+    "segregacion::BTK": "SEGREGACIÓN FAMILIAR — Gen BTK (Xq21.3) · Herencia ligada al X:\n\n• Probando (♂, 8 años): AFECTADO — hemicigoto mutación c.1684C>T (p.Arg562Cys)\n• Madre (♀, 38 años): PORTADORA — heterocigota. Asintomática.\n• Padre (♂, 40 años): No portador (no aplica cromosoma X).\n• Tío materno (♂, fallecido): Probable AFECTADO (no disponible para estudio).\n• Abuela materna (♀): PORTADORA — heterocigota. Asintomática.\n",
 
     // Ensayos funcionales
     "funcional::proliferacion::PHA": "Proliferación Celular — PHA:\nÍndice de estimulación (IE): 1.2 (↓↓, VN: IE > 10)\nCD4+ Ki67+: 3% · CD8+ Ki67+: 4%\n",
@@ -72,6 +72,9 @@ window.EGC_CASES.push({
     "autoanticuerpos::anti-DNA": "Anticuerpos anti-DNA de doble cadena: Negativo.",
 
     // Ecografía
-    "ecografia::completa": "Órganos abdominales normales, sin esplenomegalia ni hepatomegalia. No se detecta líquido libre en cavidad peritoneal."
+    "ecografia::completa": "Órganos abdominales normales, sin esplenomegalia ni hepatomegalia. No se detecta líquido libre en cavidad peritoneal.",
+
+    // Tomografía
+    "tomografia::de tórax": "Tomografía computada de tórax:\nSin hallazgos patológicos relevantes. Parénquima pulmonar bien ventilado, sin áreas de consolidación ni de enfermedad intersticial."
   }
 });

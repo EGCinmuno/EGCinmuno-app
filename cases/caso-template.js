@@ -86,6 +86,10 @@ window.EGC_CASES.push({
 
     // 🛡️ Autoanticuerpos
     "autoanticuerpos::ANA (FAN)": "Anticuerpos Antinucleares (ANA): ...",
-    "autoanticuerpos::anti-DNA": "Anticuerpos anti-DNA: ..."
+    "autoanticuerpos::anti-DNA": "Anticuerpos anti-DNA: ...",
+
+    // 🩻 Ecografía y Tomografía
+    "ecografia::completa": "Ecografía abdominal:\n...",
+    "tomografia::de tórax": "Tomografía computada de tórax:\n..."
   }
 });

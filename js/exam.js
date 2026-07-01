@@ -64,10 +64,12 @@ function updateTokenBadge() {
   const badge = document.getElementById("token-badge");
   const count = document.getElementById("token-count");
   session = syncSession();
-  count.textContent = session.tokensLeft;
+  const caseId = currentCase ? currentCase.id : "";
+  const tokens = getStudentTokens(session, caseId);
+  count.textContent = tokens;
   badge.className = "token-badge";
-  if (session.tokensLeft <= 1) badge.classList.add("critical");
-  else if (session.tokensLeft <= 2) badge.classList.add("warning");
+  if (tokens <= 1) badge.classList.add("critical");
+  else if (tokens <= 2) badge.classList.add("warning");
 }
 
 // ──────────────────────────────────────────────
@@ -112,6 +114,9 @@ function selectCase(c, cardEl) {
   document.getElementById("no-case-msg").style.display = "none";
   document.getElementById("study-panel").style.display = "flex";
   document.getElementById("current-case-name").textContent = c.name;
+
+  // Actualizar el marcador de tokens para el caso seleccionado
+  updateTokenBadge();
 
   // Mostrar info del paciente en el banner del caso
   renderCaseInfoBanner(c);
@@ -176,6 +181,7 @@ function classifyFinding(typeId, subtypeId, target, resultText) {
   // Categorías por tipo directo:
   if (typeId === "info-paciente") return "general";
   if (typeId === "ecografia") return "gastro";
+  if (typeId === "tomografia") return "lungs";
   if (typeId === "pcr") return "molecular";
   if (typeId === "western-blot") return "western";
   if (typeId === "funcional") return "funcional";
@@ -466,7 +472,9 @@ function handleFreeQuery() {
   }
 
   session = syncSession();
-  if (session.tokensLeft <= 0) {
+  const caseId = currentCase.id;
+  const currentTokens = getStudentTokens(session, caseId);
+  if (currentTokens <= 0) {
     showToast("❌ Sin tokens disponibles", "error");
     return;
   }
@@ -509,6 +517,21 @@ function handleFreeQuery() {
   const targetDisplay = parsed.type.fixed
     ? parsed.type.fixedTarget
     : (parsed.target || "");
+
+  const targets = splitTargets(parsed.type.id, targetDisplay);
+  const cost = targets.length;
+  if (currentTokens < cost) {
+    resultDiv.innerHTML = `
+      <div class="free-parse-card error">
+        <div class="parse-card-title">❌ Tokens insuficientes</div>
+        <div class="parse-card-body">
+          <p>Esta consulta requiere <strong>${cost} tokens</strong> (uno por cada analito: ${targets.join(", ")}), pero solo te quedan <strong>${currentTokens} tokens</strong> para este caso.</p>
+        </div>
+        <p style="font-size:0.78rem;color:var(--text-muted);margin-top:0.5rem;">⚡ No se consumió ningún token.</p>
+      </div>`;
+    pendingFreeQuery = null;
+    return;
+  }
 
   pendingFreeQuery = { type: parsed.type, subtype: parsed.subtype, target: targetDisplay };
   showConfirmationCardFromPending();
@@ -644,6 +667,9 @@ function showConfirmationCardFromPending() {
   const subtypeDisplay = subtype ? ` › ${subtype.label}` : "";
   const hasTarget = !type.fixed && target;
 
+  const targets = splitTargets(type.id, target);
+  const cost = targets.length;
+
   resultDiv.innerHTML = `
     <div class="free-parse-card confirm">
       <div class="parse-card-title">🎯 Interpretación de tu consulta</div>
@@ -658,7 +684,7 @@ function showConfirmationCardFromPending() {
         </div>` : ""}
       </div>
       <div class="parse-actions">
-        <button class="btn-parse-confirm" id="btn-confirm-query">✓ Confirmar y solicitar <span style="font-size:0.75rem;opacity:0.7">−1 token</span></button>
+        <button class="btn-parse-confirm" id="btn-confirm-query">✓ Confirmar y solicitar <span style="font-size:0.75rem;opacity:0.7">−${cost} token${cost > 1 ? 's' : ''}</span></button>
         <button class="btn-parse-cancel" id="btn-cancel-query">✗ Cancelar</button>
       </div>
     </div>`;
@@ -785,7 +811,9 @@ function switchTab(id) {
 function submitStudyGuided(type) {
   if (!currentCase) { showToast("⚠️ Seleccioná un caso primero", "warning"); return; }
   session = syncSession();
-  if (session.tokensLeft <= 0) { showToast("❌ Sin tokens disponibles", "error"); return; }
+  const caseId = currentCase.id;
+  const currentTokens = getStudentTokens(session, caseId);
+  if (currentTokens <= 0) { showToast("❌ Sin tokens disponibles", "error"); return; }
 
   let target, subtype = null;
 
@@ -813,28 +841,65 @@ function submitStudyGuided(type) {
 // LÓGICA CENTRAL DE SOLICITUD
 // ──────────────────────────────────────────────
 
+function splitTargets(typeId, targetText) {
+  if (!targetText) return [];
+  const type = STUDY_TYPES.find(t => t.id === typeId);
+  if (type && type.fixed) return [targetText];
+  
+  // Reemplazar conjunciones y separar por comas
+  let cleaned = targetText.replace(/\b(y|e|o)\b/gi, ",");
+  let rawParts = cleaned.split(",");
+  return rawParts
+    .map(p => p.trim())
+    .filter(p => p.length > 0);
+}
+
 function submitStudyDirect(type, subtype, target) {
-  const result = findResult(currentCase, type.id, subtype?.id, target);
-  const resultFound = result !== null;
-
-  showProcessing(type, subtype, target, () => {
-    const resultText = result || buildNotFoundText(type, subtype, target);
-
-    const { tokensLeft } = consumeToken(
-      session.name, currentCase.id,
-      type.label + (subtype ? ` › ${subtype.label}` : ""),
-      target, resultFound, resultText, type.id, subtype?.id
-    );
-
-    addToHistory(type, subtype, target, resultText, resultFound, tokensLeft);
+  const targets = splitTargets(type.id, target);
+  if (targets.length === 0) {
+    showToast("⚠️ Target no válido", "warning");
+    return;
+  }
+  
+  session = syncSession();
+  const caseId = currentCase.id;
+  const currentTokens = getStudentTokens(session, caseId);
+  const cost = targets.length;
+  
+  if (currentTokens < cost) {
+    showToast(`❌ No tenés suficientes tokens para estas ${cost} consultas (te quedan ${currentTokens} tokens)`, "error");
+    return;
+  }
+  
+  showProcessing(type, subtype, targets.join(", "), () => {
+    let finalTokensLeft = currentTokens;
+    let anyFound = false;
+    
+    targets.forEach(tgt => {
+      const result = findResult(currentCase, type.id, subtype?.id, tgt);
+      const resultFound = result !== null;
+      if (resultFound) anyFound = true;
+      const resultText = result || buildNotFoundText(type, subtype, tgt);
+      
+      const { tokensLeft } = consumeToken(
+        session.name, currentCase.id,
+        type.label + (subtype ? ` › ${subtype.label}` : ""),
+        tgt, resultFound, resultText, type.id, subtype?.id
+      );
+      finalTokensLeft = tokensLeft;
+      
+      addToHistory(type, subtype, tgt, resultText, resultFound, tokensLeft);
+    });
+    
     updateTokenBadge();
-
-    // Actualizar la descripción del caso con la nueva info obtenida
-    if (resultFound) {
+    
+    if (anyFound) {
       renderCaseInfoBanner(currentCase);
     }
-
-    if (tokensLeft === 0) showToast("⚠️ Usaste tu último token", "warning");
+    
+    if (finalTokensLeft === 0) {
+      showToast("⚠️ Usaste tu último token", "warning");
+    }
   });
 }
 

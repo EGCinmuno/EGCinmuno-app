@@ -23,21 +23,21 @@ window.EGC_CASES.push({
     "antecedentes::hermanos": "ANTECEDENTES — HERMANOS:\nHijo único. No tiene hermanos.",
 
     // Hemograma
-    "hemograma::completo": "Hemograma completo:\n• Leucocitos: 8.800/μL (normal)\n• Monocitos: 8% (Abs: 704/μL, normal)\n• Neutrófilos: 58% (Abs: 5.104/μL, normal)\n• Linfocitos Totales: 32% (Abs: 2.816/μL, normal-bajo)\n• Plaquetas: 277.000/μL (normal)\n• Hemoglobina: 11.5 g/dL (normal)\nCONCLUSIÓN: Hemograma general dentro de límites normales, linfocitos en el límite inferior para el rango de edad.",
+    "hemograma::completo": "Hemograma completo:\n• Leucocitos: 8.800/μL (normal)\n• Monocitos: 8% (Abs: 704/μL, normal)\n• Neutrófilos: 58% (Abs: 5.104/μL, normal)\n• Linfocitos Totales: 32% (Abs: 2.816/μL, normal-bajo)\n• Plaquetas: 277.000/μL (normal)\n• Hemoglobina: 11.5 g/dL (normal)",
 
     // Citometría de flujo
-    "citometria::CD3 T cells (Linfocitos T / CD3+)": "Citometría — Linfocitos T (CD3+):\nCD3+ = 73% (Abs del reporte: 5.813/μL; Abs calculado según hemograma: 2.056/μL).\nCONCLUSIÓN: Población de células T totales en rango normal.",
-    "citometria::CD4 T cells (Linfocitos T CD4+ / Helper / Cooperadores)": "Citometría — Linfocitos T CD4+:\nCD4+ = 30% (Abs del reporte: 2.360/μL; Abs calculado según hemograma: 845/μL).\nCONCLUSIÓN: Células T colaboradoras/helpers en rango normal.",
-    "citometria::CD8 T cells (Linfocitos T CD8+ / Citotoxicos)": "Citometría — Linfocitos T CD8+:\nCD8+ = 38% (Abs del reporte: 3.038/μL; Abs calculado según hemograma: 1.070/μL).\nCONCLUSIÓN: Linfocitos T citotóxicos en rango normal-alto.",
-    "citometria::CD19 B cells (Linfocitos B / CD19+)": "Citometría — Linfocitos B (CD19+):\nCD19+ = 17% (Abs calculado según hemograma: 479/μL).\nCONCLUSIÓN: Presencia de Linfocitos B en rango normal para la edad.",
-    "citometria::NK cells (Celulas NK / CD56+ CD16+)": "Citometría — Células NK (CD3-CD56+CD16+):\nNK = 10% (Abs del reporte: 775/μL; Abs calculado según hemograma: 282/μL).\nCONCLUSIÓN: Células NK en rango de referencia normal.",
-    "citometria::LB memoria (CD19+CD27+)": "Citometría — Linfocitos B de Memoria (CD19+CD27+):\nCD19+CD27+ = 38% (dentro del total de células B CD19+).\nCONCLUSIÓN: Proporción de células B de memoria en rango conservado para la edad.",
-    "citometria::CD19+CD27+IgM- (B memoria con cambio de isotipo / switched)": "Citometría — B memoria con cambio de isotipo (CD19+CD27+IgM-):\nCD19+CD27+IgM- = 2.5% (dentro del total de células B CD19+).\nCONCLUSIÓN: Células B de memoria switched en límites de referencia normal-bajo.",
+    "citometria::CD3 T cells (Linfocitos T / CD3+)": "Citometría — Linfocitos T (CD3+):\nCD3+ = 73% (Abs del reporte: 5.813/μL; Abs calculado según hemograma: 2.056/μL).\n",
+    "citometria::CD4 T cells (Linfocitos T CD4+ / Helper / Cooperadores)": "Citometría — Linfocitos T CD4+:\nCD4+ = 30% (Abs del reporte: 2.360/μL; Abs calculado según hemograma: 845/μL).\n",
+    "citometria::CD8 T cells (Linfocitos T CD8+ / Citotoxicos)": "Citometría — Linfocitos T CD8+:\nCD8+ = 38% (Abs del reporte: 3.038/μL; Abs calculado según hemograma: 1.070/μL).\n",
+    "citometria::CD19 B cells (Linfocitos B / CD19+)": "Citometría — Linfocitos B (CD19+):\nCD19+ = 17% (Abs calculado según hemograma: 479/μL).\n.",
+    "citometria::NK cells (Celulas NK / CD56+ CD16+)": "Citometría — Células NK (CD3-CD56+CD16+):\nNK = 10% (Abs del reporte: 775/μL; Abs calculado según hemograma: 282/μL).\n",
+    "citometria::LB memoria (CD19+CD27+)": "Citometría — Linfocitos B de Memoria (CD19+CD27+):\nCD19+CD27+ = 38% (dentro del total de células B CD19+).\n",
+    "citometria::CD19+CD27+IgM- (B memoria con cambio de isotipo / switched)": "Citometría — B memoria con cambio de isotipo (CD19+CD27+IgM-):\nCD19+CD27+IgM- = 2.5% (dentro del total de células B CD19+).\n",
 
     // ELISA / Dosaje
     "elisa::IgG (Inmunoglobulina G)": "Dosaje — Inmunoglobulina G (IgG):\nIgG sérica = 356 mg/dL (VN: 500-1300 mg/dL).\n",
     "elisa::IgA (Inmunoglobulina A)": "Dosaje — Inmunoglobulina A (IgA):\nIgA sérica = 31 mg/dL (VN: 20-100 mg/dL).\n",
-    "elisa::IgM (Inmunoglobulina M)": "Dosaje — Inmunoglobulina M (IgM):\nIgM sérica = 136 mg/dL (VN: 40-150 mg/dL).\n",
+    "elisa::IgM (Inmunoglobulina M)": "Dosaje — Inmunoglobulina M (IgM):\nIgM sérica = 455 mg/dL (VN: 40-150 mg/dL).\n",
     "elisa::IgE (Inmunoglobulina E)": "Dosaje — Inmunoglobulina E (IgE):\nIgE sérica: No detectable\n",
 
     // Vacunas
@@ -72,6 +72,9 @@ window.EGC_CASES.push({
     "autoanticuerpos::anti-DNA": "Anticuerpos anti-DNA de doble cadena: Negativo.",
 
     // Ecografía
-    "ecografia::completa": "Ecografía abdominal:\nEvidencia esplenomegalia leve persistente (bazo de 8.2 cm, límite superior para la edad), sin hepatomegalia."
+    "ecografia::completa": "Ecografía abdominal:\nEvidencia esplenomegalia leve persistente (bazo de 8.2 cm, límite superior para la edad), sin hepatomegalia.",
+
+    // Tomografía
+    "tomografia::de tórax": "Tomografía computada de tórax de alta resolución (TCAR):\nEvidencia áreas de vidrio esmerilado, engrosamiento septal y pequeños nódulos subpleurales difusos. Hallazgos compatibles con compromiso pulmonar intersticial de tipo GLILD (Granulomatous-Lymphocytic Interstitial Lung Disease)."
   }
 });

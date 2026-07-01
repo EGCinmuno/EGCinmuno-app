@@ -42,10 +42,6 @@ function requireAdmin() {
 // LOGIN DE ESTUDIANTE
 // ──────────────────────────────────────────────
 
-/**
- * Intenta iniciar sesión con nombre o email.
- * @returns {{ success: boolean, student?: object, error?: string }}
- */
 function loginStudent(input) {
   initData();
   const data = getData();
@@ -58,10 +54,6 @@ function loginStudent(input) {
 
   if (!found) {
     return { success: false, error: "Nombre o email no encontrado en la lista de participantes." };
-  }
-
-  if (found.tokensLeft <= 0) {
-    return { success: false, error: "Has agotado todos tus tokens de consulta para este examen." };
   }
 
   setSession(found);
@@ -89,6 +81,20 @@ function logoutAdmin() {
 // ──────────────────────────────────────────────
 
 /**
+ * Obtiene los tokens restantes de un estudiante para un caso específico.
+ */
+function getStudentTokens(student, caseId) {
+  if (!student) return 0;
+  if (!student.tokensPerCase) {
+    student.tokensPerCase = {};
+  }
+  if (student.tokensPerCase[caseId] === undefined) {
+    student.tokensPerCase[caseId] = TOKENS_PER_STUDENT;
+  }
+  return student.tokensPerCase[caseId];
+}
+
+/**
  * Consume un token del estudiante y actualiza localStorage + session.
  * Registra la consulta en el log del estudiante.
  * @returns {{ success: boolean, tokensLeft: number }}
@@ -98,10 +104,25 @@ function consumeToken(studentName, caseId, studyType, target, resultFound, resul
   const idx = data.students.findIndex(s => normalize(s.name) === normalize(studentName));
 
   if (idx === -1) return { success: false, tokensLeft: 0 };
-  if (data.students[idx].tokensLeft <= 0) return { success: false, tokensLeft: 0 };
+  
+  const student = data.students[idx];
+  if (!student.tokensPerCase) {
+    student.tokensPerCase = {};
+  }
+  if (student.tokensPerCase[caseId] === undefined) {
+    student.tokensPerCase[caseId] = TOKENS_PER_STUDENT;
+  }
 
-  data.students[idx].tokensLeft--;
-  data.students[idx].log.push({
+  if (student.tokensPerCase[caseId] <= 0) return { success: false, tokensLeft: 0 };
+
+  student.tokensPerCase[caseId]--;
+  
+  // Retrocompatibilidad con tokensLeft global
+  if (student.tokensLeft > 0) {
+    student.tokensLeft--;
+  }
+
+  student.log.push({
     timestamp: new Date().toISOString(),
     caseId,
     studyType,
@@ -115,10 +136,9 @@ function consumeToken(studentName, caseId, studyType, target, resultFound, resul
   saveData(data);
 
   // Actualizar sesión con los nuevos tokens
-  const updatedStudent = data.students[idx];
-  setSession(updatedStudent);
+  setSession(student);
 
-  return { success: true, tokensLeft: updatedStudent.tokensLeft };
+  return { success: true, tokensLeft: student.tokensPerCase[caseId] };
 }
 
 /**

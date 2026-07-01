@@ -171,6 +171,16 @@ const STUDY_TYPES = [
     fixed: true,
     fixedTarget: "completa",
     keywords: ["ecografia", "ecografía", "ultrasonido", "bazo", "esplenomegalia", "higado", "hígado", "hepatomegalia", "abdominal", "ecografía abdominal", "ecografia abdominal"]
+  },
+  {
+    id: "tomografia",
+    label: "Tomografía Computada",
+    icon: "🌀",
+    color: "#06b6d4",
+    description: "Tomografía computada de alta resolución (tórax, abdomen, etc.)",
+    fixed: true,
+    fixedTarget: "de tórax",
+    keywords: ["tomografia", "tomografía", "tc", "tac", "tcar", "hrct", "tomografía computada", "tomografia de torax", "tomografia de tórax", "glild", "pulmon", "pulmón", "pulmonar"]
   }
 ];
 
@@ -181,7 +191,7 @@ const STUDY_TYPES = [
 const DEFAULT_DATA = {
   settings: {
     // 'both' | 'free' | 'guided'
-    queryMode: "both"
+    queryMode: "free"
   },
 
   students: [
@@ -191,9 +201,8 @@ const DEFAULT_DATA = {
     { name: "Estudiante Demo", email: "demo@demo.com", tokensLeft: TOKENS_PER_STUDENT, log: [] },
     { name: "Jonathan Zaiat", email: "jzaiat@gmail.com", tokensLeft: TOKENS_PER_STUDENT, log: [] },
     { name: "Belen Almejun", email: "mbalmejun@gmail.com", tokensLeft: TOKENS_PER_STUDENT, log: [] },
+    { name: "Ana Laura Lopez", email: "analopez@gmail.com", tokensLeft: TOKENS_PER_STUDENT, log: [] },
     { name: "Nico Di Biasi", email: "dibiasinicolasar@gmail.com", tokensLeft: TOKENS_PER_STUDENT, log: [] },
-
-
   ],
 
   cases: window.EGC_CASES || []
@@ -209,7 +218,8 @@ function initData() {
   } else {
     // Migrar y sincronizar datos existentes
     const data = getData();
-    if (!data.settings) data.settings = { queryMode: "both" };
+    if (!data.settings) data.settings = {};
+    data.settings.queryMode = DEFAULT_DATA.settings.queryMode;
 
     // Sincronizar estudiantes predefinidos desde DEFAULT_DATA (agregar nuevos o actualizar emails)
     DEFAULT_DATA.students.forEach(defaultStudent => {
@@ -283,6 +293,12 @@ function parseNaturalQuery(text) {
   let detectedType = null;
   let detectedSubtype = null;
   let typeScore = 0;
+
+  // Evitar colisión entre "segregación familiar" y "antecedentes familiares"
+  if (normalized.includes("segregac") || normalized.includes("genetic")) {
+    detectedType = STUDY_TYPES.find(t => t.id === "segregacion");
+    typeScore = 100;
+  }
 
   for (const type of STUDY_TYPES) {
     let score = 0;

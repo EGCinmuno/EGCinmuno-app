@@ -122,25 +122,48 @@ function renderStudentsTable(students, filter = "") {
     ? students.filter(s => normalize(s.name).includes(normalize(filter)) || normalize(s.email).includes(normalize(filter)))
     : students;
 
-  tbody.innerHTML = filtered.map(s => `
-    <tr>
-      <td><strong>${s.name}</strong></td>
-      <td class="text-muted">${s.email}</td>
-      <td><span class="token-pill ${s.tokensLeft === 0 ? 'empty' : s.tokensLeft <= 2 ? 'low' : 'ok'}">${s.tokensLeft}/${TOKENS_PER_STUDENT}</span></td>
-      <td>${s.log.length}</td>
-      <td class="actions-cell">
-        <button class="btn-icon-sm" title="Editar tokens" onclick="editStudentTokens('${s.name}', ${s.tokensLeft})">✏️</button>
-        <button class="btn-icon-sm" title="Resetear tokens" onclick="resetStudentTokens('${s.name}')">🔄</button>
-        <button class="btn-icon-sm danger" title="Eliminar" onclick="deleteStudent('${s.name}')">🗑</button>
-      </td>
-    </tr>
-  `).join("") || `<tr><td colspan="5" class="empty-row">Sin estudiantes</td></tr>`;
+  const data = getData();
+  const cases = data.cases || [];
+
+  tbody.innerHTML = filtered.map(s => {
+    let tokensPillsHTML = "";
+    cases.forEach(c => {
+      const caseTokens = s.tokensPerCase && s.tokensPerCase[c.id] !== undefined ? s.tokensPerCase[c.id] : TOKENS_PER_STUDENT;
+      const statusClass = caseTokens === 0 ? 'empty' : caseTokens <= 2 ? 'low' : 'ok';
+      const label = c.name.split("—")[0].trim().split(" ")[0] + " " + (c.name.split("—")[0].trim().split(" ")[1] || "");
+      tokensPillsHTML += `
+        <div style="font-size:0.65rem; margin-bottom:2px; display:inline-block; margin-right:4px;">
+          <span class="token-pill ${statusClass}" style="padding: 2px 4px; font-size: 0.65rem;" title="${c.name}">
+            ${label}: ${caseTokens}/${TOKENS_PER_STUDENT}
+          </span>
+        </div>
+      `;
+    });
+    
+    if (cases.length === 0) {
+      tokensPillsHTML = `<span class="token-pill ok">${s.tokensLeft}/${TOKENS_PER_STUDENT}</span>`;
+    }
+
+    return `
+      <tr>
+        <td><strong>${s.name}</strong></td>
+        <td class="text-muted">${s.email}</td>
+        <td><div style="max-width:300px; display:flex; flex-wrap:wrap; gap:2px;">${tokensPillsHTML}</div></td>
+        <td>${s.log.length}</td>
+        <td class="actions-cell">
+          <button class="btn-icon-sm" title="Editar tokens (por caso)" onclick="editStudentTokens('${s.name}', ${s.tokensLeft})">✏️</button>
+          <button class="btn-icon-sm" title="Resetear tokens" onclick="resetStudentTokens('${s.name}')">🔄</button>
+          <button class="btn-icon-sm danger" title="Eliminar" onclick="deleteStudent('${s.name}')">🗑</button>
+        </td>
+      </tr>
+    `;
+  }).join("") || `<tr><td colspan="5" class="empty-row">Sin estudiantes</td></tr>`;
 }
 
 function filterStudents(val) { renderStudentsTable(getData().students, val); }
 
 function editStudentTokens(name, currentTokens) {
-  const newVal = prompt(`Ingrese la nueva cantidad de tokens para ${name}:`, currentTokens);
+  const newVal = prompt(`Ingrese la nueva cantidad de tokens POR CASO para ${name}:`, currentTokens);
   if (newVal === null || newVal.trim() === "") return;
   const tokens = parseInt(newVal, 10);
   if (isNaN(tokens) || tokens < 0) {
@@ -150,29 +173,41 @@ function editStudentTokens(name, currentTokens) {
   const data = getData();
   const idx = data.students.findIndex(s => normalize(s.name) === normalize(name));
   if (idx === -1) return;
+  
   data.students[idx].tokensLeft = tokens;
+  if (!data.students[idx].tokensPerCase) data.students[idx].tokensPerCase = {};
+  data.cases.forEach(c => {
+    data.students[idx].tokensPerCase[c.id] = tokens;
+  });
+  
   saveData(data);
   renderStudentsTable(data.students);
-  showAdminToast(`Tokens de ${name} actualizados a ${tokens}`);
+  showAdminToast(`Tokens de ${name} actualizados a ${tokens} por caso`);
 }
 
 function resetStudentTokens(name) {
   const data = getData();
   const idx = data.students.findIndex(s => normalize(s.name) === normalize(name));
   if (idx === -1) return;
+  
   data.students[idx].tokensLeft = TOKENS_PER_STUDENT;
+  data.students[idx].tokensPerCase = {};
+  
   saveData(data);
   renderStudentsTable(data.students);
-  showAdminToast(`Tokens reseteados para ${name}`);
+  showAdminToast(`Tokens reseteados por caso para ${name}`);
 }
 
 function resetAllTokens() {
   if (!confirm("¿Resetear tokens de TODOS los estudiantes?")) return;
   const data = getData();
-  data.students.forEach(s => s.tokensLeft = TOKENS_PER_STUDENT);
+  data.students.forEach(s => {
+    s.tokensLeft = TOKENS_PER_STUDENT;
+    s.tokensPerCase = {};
+  });
   saveData(data);
   renderStudentsTable(data.students);
-  showAdminToast("Tokens reseteados para todos");
+  showAdminToast("Tokens reseteados por caso para todos");
 }
 
 function deleteStudent(name) {
