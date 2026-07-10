@@ -29,6 +29,29 @@ function requireAuth() {
   return session;
 }
 
+// ──────────────────────────────────────────────
+// CONFIGURACIÓN DINÁMICA DESDE SUPABASE
+// ──────────────────────────────────────────────
+
+let cachedTokensLimit = 15;
+let cachedQueryMode = "both";
+
+async function fetchSystemSettings() {
+  try {
+    const { data, error } = await supabaseClient
+      .from('settings')
+      .select('*');
+    if (!error && data) {
+      const tokensRow = data.find(r => r.key === 'tokens_per_student');
+      const modeRow = data.find(r => r.key === 'query_mode');
+      if (tokensRow) cachedTokensLimit = parseInt(tokensRow.value, 10) || 15;
+      if (modeRow) cachedQueryMode = modeRow.value || "both";
+    }
+  } catch (err) {
+    console.error("Error al cargar configuraciones de Supabase:", err);
+  }
+}
+
 function requireAdmin() {
   const isAdmin = sessionStorage.getItem("egc_admin");
   if (!isAdmin) {
@@ -110,7 +133,7 @@ async function getStudentTokens(student, caseId) {
 
     if (error) {
       console.error("Error en getStudentTokens:", error);
-      return student.role === 'docente' ? 999 : TOKENS_PER_STUDENT;
+      return student.role === 'docente' ? 999 : cachedTokensLimit;
     }
 
     if (data) {
@@ -118,7 +141,7 @@ async function getStudentTokens(student, caseId) {
     }
 
     // Si no existe el registro, lo creamos
-    const initialTokens = student.role === 'docente' ? 999 : TOKENS_PER_STUDENT;
+    const initialTokens = student.role === 'docente' ? 999 : cachedTokensLimit;
     const { error: insertError } = await supabaseClient
       .from('student_tokens')
       .insert({
@@ -134,7 +157,7 @@ async function getStudentTokens(student, caseId) {
     return initialTokens;
   } catch (err) {
     console.error("Excepción en getStudentTokens:", err);
-    return student.role === 'docente' ? 999 : TOKENS_PER_STUDENT;
+    return student.role === 'docente' ? 999 : cachedTokensLimit;
   }
 }
 
@@ -161,7 +184,7 @@ async function consumeToken(studentName, caseId, studyType, target, resultFound,
       return { success: false, tokensLeft: 0 };
     }
 
-    let tokensLeft = tokenData ? tokenData.tokens_left : (isDocente ? 999 : TOKENS_PER_STUDENT);
+    let tokensLeft = tokenData ? tokenData.tokens_left : (isDocente ? 999 : cachedTokensLimit);
 
     // Si es estudiante, validamos que tenga tokens y decrementamos
     if (!isDocente) {

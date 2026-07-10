@@ -31,7 +31,7 @@
 
   --text-primary:   #f1f5f9;
   --text-secondary: #94a3b8;
-  --text-muted:     #475569;
+  --text-muted:     #64748b;
 
   --radius-sm:      6px;
   --radius-md:      10px;
@@ -67,7 +67,7 @@
 
   --text-primary:   #0f172a;
   --text-secondary: #475569;
-  --text-muted:     #94a3b8;
+  --text-muted:     #475569;
 }
 
 :root[data-theme="light"] body::before {
@@ -1225,8 +1225,9 @@ code, pre {
 
 .btn-icon-sm {
   padding: 0.35rem 0.5rem;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-active);
+  color: var(--text-primary);
   border-radius: var(--radius-sm);
   cursor: pointer;
   font-size: 0.85rem;
@@ -1234,8 +1235,19 @@ code, pre {
   line-height: 1;
 }
 
-.btn-icon-sm:hover { background: rgba(255,255,255,0.1); }
-.btn-icon-sm.danger:hover { background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.4); }
+.btn-icon-sm:hover {
+  background: var(--primary-glow);
+  transform: scale(1.05);
+}
+
+.btn-icon-sm.danger {
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.btn-icon-sm.danger:hover {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: var(--danger);
+}
 
 .empty-row { text-align: center; color: var(--text-muted); font-style: italic; }
 

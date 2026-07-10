@@ -9,11 +9,17 @@ let queryHistory = [];
 let pendingFreeQuery = null;  // Bug fix: almacenar el parsed result en lugar de pasar por inline-onclick
 
 
+let examCases = [];
+let queryMode = "both";
+
 document.addEventListener("DOMContentLoaded", async () => {
   initData();
   session = requireAuth();
   if (!session) return;
   session = syncSession();
+
+  // Cargar configuraciones globales
+  await fetchSystemSettings();
 
   // Restaurar historial desde la base de datos de Supabase
   try {
@@ -45,8 +51,37 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.error("Excepción al cargar historial de Supabase:", err);
   }
 
-  const data = getData();
-  const queryMode = data.settings?.queryMode || "both";
+  // Cargar casos desde Supabase
+  try {
+    const { data: csData, error: csErr } = await supabaseClient
+      .from('cases')
+      .select('*')
+      .eq('status', 'published')
+      .order('id', { ascending: true });
+
+    if (csErr) {
+      console.error("Error al obtener casos de Supabase:", csErr);
+    } else if (csData && csData.length > 0) {
+      examCases = csData.map(c => ({
+        id: c.id,
+        name: c.name,
+        description: c.description || "",
+        status: c.status || "published",
+        patient: c.patient || {},
+        results: c.results || {}
+      }));
+    }
+  } catch (err) {
+    console.error("Excepción al cargar casos de Supabase:", err);
+  }
+
+  // Fallback si no hay casos en Supabase
+  if (examCases.length === 0) {
+    const data = getData();
+    examCases = (data.cases || []).filter(c => c.status === "published");
+  }
+
+  queryMode = cachedQueryMode;
 
   await renderHeader();
   renderCaseSelector();
@@ -98,21 +133,17 @@ async function updateTokenBadge() {
 // ──────────────────────────────────────────────
 
 function renderCaseSelector() {
-  const data = getData();
   const container = document.getElementById("case-list");
   container.innerHTML = "";
 
-  // Solo mostrar casos publicados
-  const published = data.cases.filter(c => c.status === "published");
-
-  if (published.length === 0) {
+  if (examCases.length === 0) {
     container.innerHTML = `<p style="color:var(--text-muted);font-size:0.82rem;padding:0.5rem 0;">
       No hay casos disponibles aún. El docente los habilitará durante el examen.
     </p>`;
     return;
   }
 
-  published.forEach(c => {
+  examCases.forEach(c => {
     const card = document.createElement("div");
     card.className = "case-card" + (currentCase?.id === c.id ? " active" : "");
     card.innerHTML = `
@@ -120,7 +151,6 @@ function renderCaseSelector() {
         <span class="case-icon">📋</span>
         <span class="case-name">${c.name}</span>
       </div>
-      <p class="case-desc">${c.description}</p>
     `;
     card.addEventListener("click", () => selectCase(c, card));
     container.appendChild(card);
@@ -142,14 +172,12 @@ async function selectCase(c, cardEl) {
   // Mostrar info del paciente en el banner del caso
   renderCaseInfoBanner(c);
 
-  // Habilitar barra libre
-  const freeInput = document.getElementById("free-query-input");
-  if (freeInput) {
-    freeInput.disabled = false;
-    freeInput.placeholder = "Escribí aquí tu consulta... ej: 'Motivo de la consulta'";
+  // Renderizar barra libre y mensaje de bienvenida si aplica
+  if (queryMode !== "guided") {
+    renderFreeQueryBar();
   }
 
-  // Renderizar el historial cada vez que se cambia de caso (opcional, para mantener el contexto)
+  // Renderizar el historial cada vez que se cambia de caso
   renderHistory();
 }
 
@@ -256,8 +284,7 @@ function isGenericTarget(typeId, target) {
 }
 
 function getFindingsForCase(caseId) {
-  const data = getData();
-  const c = data.cases.find(x => x.id === caseId);
+  const c = examCases.find(x => x.id === caseId);
   if (!c) return {};
 
   const hasUnlockedOnset = queryHistory.some(entry => 
@@ -288,7 +315,7 @@ function getFindingsForCase(caseId) {
           text: ""
         };
       }
-      findings[region].text += `• <strong>${entry.studyType}${entry.target ? ` (${entry.target})` : ''}:</strong>\n${entry.resultText}\n\n`;
+      findings[region].text += `• <strong>${entry.type.label}${entry.target ? ` (${entry.target})` : ''}:</strong>\n${entry.result}\n\n`;
     }
   });
 
@@ -463,7 +490,47 @@ function renderFreeQueryBar() {
   const container = document.getElementById("free-query-section");
   if (!container) return;
 
-  container.innerHTML = `
+  // Si no hay caso seleccionado, mostrar estado deshabilitado inicial
+  if (!currentCase) {
+    container.innerHTML = `
+      <div class="free-query-bar">
+        <div class="free-query-header">
+          <span class="free-query-badge">🔍 Modo libre</span>
+          <span class="free-query-hint">Describí consulta o estudio que querés preguntar o solicitar</span>
+        </div>
+        <form id="free-query-form" class="free-query-form">
+          <input
+            type="text"
+            id="free-query-input"
+            class="free-query-input"
+            placeholder="Primero seleccioná un caso clínico..."
+            disabled
+          >
+          <button type="submit" class="btn-free-query" id="free-query-btn" disabled>Interpretar →</button>
+        </form>
+      </div>
+    `;
+    return;
+  }
+
+  // Verificar si ya se realizó alguna consulta válida para este caso
+  const hasQueries = queryHistory.some(entry => entry.caseId === currentCase.id);
+  const welcomeHTML = (!hasQueries && currentCase.description)
+    ? `
+      <div id="case-welcome-bubble" class="welcome-speech-bubble" style="background: var(--primary-glow); border: 1px solid var(--border-active); border-radius: var(--radius-md); padding: 1.2rem; margin-bottom: 1.25rem; position: relative; animation: fadeInUp 0.4s ease; box-shadow: var(--shadow-sm);">
+        <div style="font-size: 0.8rem; font-weight: 700; color: var(--primary-light); margin-bottom: 0.35rem; display: flex; align-items: center; gap: 0.4rem;">
+          💬 Consulta Inicial / Motivo del Paciente:
+        </div>
+        <p style="margin: 0; font-size: 0.88rem; color: var(--text-primary); font-style: italic; line-height: 1.45;">
+          "${currentCase.description}"
+        </p>
+        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.6rem; font-weight: 500; border-top: 1px dashed var(--border); padding-top: 0.4rem;">
+          💡 Escribí en el cuadro de abajo lo que quieras preguntarle al paciente (ej: <em>"motivo de consulta"</em>, <em>"antecedentes familiares"</em>, <em>"inicio de síntomas"</em>) o solicita un estudio (ej: <em>"hemograma"</em>).
+        </div>
+      </div>`
+    : "";
+
+  container.innerHTML = welcomeHTML + `
     <div class="free-query-bar">
       <div class="free-query-header">
         <span class="free-query-badge">🔍 Modo libre</span>
@@ -474,10 +541,9 @@ function renderFreeQueryBar() {
           type="text"
           id="free-query-input"
           class="free-query-input"
-          placeholder="Primero seleccioná un caso clínico..."
+          placeholder="Escribí aquí tu consulta... ej: 'Motivo de consulta'"
           autocomplete="off"
           spellcheck="false"
-          disabled
         >
         <button type="submit" class="btn-free-query" id="free-query-btn">Interpretar →</button>
       </form>
@@ -1018,6 +1084,10 @@ function addToHistory(type, subtype, target, result, found, tokensLeft) {
   queryHistory.unshift({ type, subtype, target, result, found, tokensLeft, time: new Date(), caseId: currentCase.id });
   renderHistory();
 
+  if (queryMode !== "guided") {
+    renderFreeQueryBar();
+  }
+
   // Scroll al resultado
   setTimeout(() => {
     const firstCard = document.querySelector(".result-card");
@@ -1059,7 +1129,7 @@ function renderHistory() {
         <pre class="result-text">${item.result}</pre>
       </div>
       <div class="result-footer">
-        <span class="result-case">${getData().cases.find(c => c.id === item.caseId)?.name || currentCase?.name || ""}</span>
+        <span class="result-case">${examCases.find(c => c.id === item.caseId)?.name || currentCase?.name || ""}</span>
         <span class="result-time">${formatTime(item.time)} · Tokens restantes: ${item.tokensLeft}</span>
       </div>`;
     container.appendChild(card);

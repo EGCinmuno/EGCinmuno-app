@@ -1,11 +1,36 @@
-/**
- * EGCinmuno-App — Panel de Administración v2.1
- */
-
 let dbStudents = [];
+let dbCases = [];
+let selectedCaseId = null;
 
 async function refreshAdminData() {
   try {
+    // Cargar configuraciones del sistema
+    await fetchSystemSettings();
+
+    const { data: csData, error: csErr } = await supabaseClient
+      .from('cases')
+      .select('*')
+      .order('id', { ascending: true });
+    
+    if (csErr) {
+      console.error("Error al obtener casos de Supabase:", csErr);
+    } else if (csData) {
+      dbCases = csData.map(c => ({
+        id: c.id,
+        name: c.name,
+        description: c.description || "",
+        status: c.status || "published",
+        patient: c.patient || {},
+        results: c.results || {},
+        internal_notes: c.internal_notes || ""
+      }));
+      
+      // Auto-seleccionar primer caso si es null
+      if (!selectedCaseId && dbCases.length > 0) {
+        selectedCaseId = dbCases[0].id;
+      }
+    }
+
     const { data: stData, error: stErr } = await supabaseClient
       .from('students')
       .select('*');
@@ -452,89 +477,257 @@ async function processBulkImport() {
 // ──────────────────────────────────────────────
 
 function renderCasesTab(container) {
-  const data = getData();
   container.innerHTML = `
     <div class="admin-section">
-      <div class="admin-section-header">
+      <div class="admin-section-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
         <h2>Gestión de Casos Clínicos</h2>
         <button class="btn-admin-primary" onclick="openCaseModal()">+ Nuevo Caso</button>
       </div>
-      <div id="cases-list"></div>
+      
+      <div class="admin-cases-layout" style="display: grid; grid-template-columns: 280px 1fr; gap: 1.5rem; align-items: start; margin-top: 1rem;">
+        <!-- Left Sidebar: Cases List -->
+        <div class="admin-cases-sidebar" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem;">
+          <h3 style="font-size: 0.75rem; font-weight: 700; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.25rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
+            Casos Clínicos
+          </h3>
+          <div style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 480px; overflow-y: auto; padding-right: 0.25rem;">
+            ${dbCases.length === 0
+              ? `<p class="empty-msg" style="font-size:0.78rem; text-align:center;">No hay casos. Clic en "+ Nuevo Caso" para crear uno.</p>`
+              : dbCases.map(c => {
+                  const isSelected = c.id === selectedCaseId;
+                  const isPub = c.status === "published";
+                  return `
+                    <div onclick="selectAdminCase('${c.id}')" style="padding: 0.65rem 0.75rem; border-radius: var(--radius-md); border: 1px solid ${isSelected ? 'var(--primary)' : 'var(--border)'}; background: ${isSelected ? 'var(--primary-glow)' : 'transparent'}; cursor: pointer; transition: all var(--transition); display:flex; flex-direction:column; gap:0.2rem;">
+                      <div style="display:flex; justify-content:space-between; align-items:center; gap: 0.25rem;">
+                        <span style="font-weight:600; font-size:0.82rem; color:${isSelected ? 'var(--primary-light)' : 'var(--text-primary)'}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                          ${c.name} ${c.internal_notes ? `<span style="font-weight:normal; font-size:0.75rem; color:var(--text-muted); font-style:italic;">(${c.internal_notes})</span>` : ""}
+                        </span>
+                        <span style="font-size:0.6rem; padding:0.1rem 0.35rem; border-radius:1rem; font-weight:700; background:${isPub ? 'rgba(16,185,129,0.1)' : 'rgba(255,255,255,0.05)'}; color:${isPub ? 'var(--success)' : 'var(--text-muted)'}; flex-shrink:0;">
+                          ${isPub ? 'Activo' : 'Borrador'}
+                        </span>
+                      </div>
+                    </div>`;
+                }).join("")}
+          </div>
+          <button class="btn-admin-secondary" onclick="syncLocalCasesToSupabase()" style="margin-top:0.5rem; font-size:0.78rem; width:100%; padding: 0.4rem 0.5rem;">
+            🔄 Importar Locales
+          </button>
+        </div>
+        
+        <!-- Right Panel: Selected Case Detail Editor -->
+        <div id="cases-editor-pane" style="min-width: 0; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem; min-height: 400px;">
+          <!-- Rendered dynamically by renderSelectedCaseDetail -->
+        </div>
+      </div>
     </div>
     ${buildCaseModal()}
     ${buildResultModal()}
     ${buildPatientModal()}
   `;
-  renderCasesList(data.cases);
+  renderSelectedCaseDetail();
   bindModalCloses();
 }
 
-function renderCasesList(cases) {
-  const container = document.getElementById("cases-list");
-  container.innerHTML = cases.map(c => {
-    const isPublished = c.status === "published";
-    const patientInfo = c.patient
-      ? `${c.patient.age} · ${c.patient.gender} · Inicio: ${c.patient.symptomOnset}`
-      : "Sin datos demográficos";
-    return `
-    <div class="case-admin-card ${isPublished ? '' : 'case-draft'}">
-      <div class="case-admin-header">
-        <div>
-          <div class="case-title-row">
-            <h3>${c.name}</h3>
-            <span class="status-badge ${isPublished ? 'status-published' : 'status-draft'}">
-              ${isPublished ? '🟢 Publicado' : '⚪ Borrador'}
-            </span>
-          </div>
-          <p class="text-muted">${c.description}</p>
-          <p class="patient-summary">🧑‍⚕️ ${patientInfo}</p>
-        </div>
-        <div class="btn-group case-actions-group">
-          <button class="btn-status-toggle ${isPublished ? 'toggle-unpublish' : 'toggle-publish'}"
-            onclick="toggleCaseStatus('${c.id}')">
-            ${isPublished ? '⏸ Borrador' : '▶ Publicar'}
-          </button>
-          <button class="btn-admin-secondary" onclick="openPatientModal('${c.id}')">🧑‍⚕️ Paciente</button>
-          <button class="btn-admin-secondary" onclick="openAddResultModal('${c.id}')">+ Resultado</button>
-          <button class="btn-admin-secondary danger" onclick="deleteCase('${c.id}')">🗑</button>
-        </div>
-      </div>
-      <div class="results-grid">
-        ${Object.entries(c.results).length === 0
-        ? `<p class="empty-msg">Sin resultados. Agregá el primero.</p>`
-        : Object.entries(c.results).map(([key, val]) => {
-          const parts = key.split("::");
-          const typeId = parts[0];
-          const typeObj = STUDY_TYPES.find(t => t.id === typeId);
-          const displayKey = parts.length === 3
-            ? `${parts[1]} › ${parts[2]}`
-            : parts.slice(1).join(" › ");
-          return `
-              <div class="result-admin-item">
-                <div class="result-admin-key">
-                  <span class="result-type-badge">${typeObj ? typeObj.icon + " " + typeObj.label : typeId}</span>
-                  <span>${displayKey}</span>
-                </div>
-                <p class="result-preview">${val.substring(0, 90)}${val.length > 90 ? "..." : ""}</p>
-                <div class="result-admin-actions">
-                  <button class="btn-icon-sm" onclick="editResult('${c.id}', '${key}')">✏️</button>
-                  <button class="btn-icon-sm danger" onclick="deleteResult('${c.id}', '${key}')">🗑</button>
-                </div>
-              </div>`;
-        }).join("")}
-      </div>
-    </div>`;
-  }).join("") || `<p class="empty-msg">No hay casos. Creá el primero.</p>`;
+function selectAdminCase(id) {
+  selectedCaseId = id;
+  const content = document.getElementById("admin-content");
+  renderCasesTab(content);
 }
 
-function toggleCaseStatus(caseId) {
-  const data = getData();
-  const c = data.cases.find(x => x.id === caseId);
+function renderSelectedCaseDetail() {
+  const container = document.getElementById("cases-editor-pane");
+  if (!container) return;
+
+  const c = dbCases.find(x => x.id === selectedCaseId);
+  if (!c) {
+    container.innerHTML = `
+      <div style="text-align: center; padding: 4rem 2rem; color: var(--text-secondary);">
+        <span style="font-size: 3rem; display: block; margin-bottom: 1rem;">📋</span>
+        <h3>Seleccioná un caso de la lista</h3>
+        <p style="font-size: 0.85rem; margin-top: 0.5rem; color: var(--text-muted);">Hacé clic sobre cualquier caso clínico en el menú lateral de la izquierda para ver y editar su información.</p>
+      </div>`;
+    return;
+  }
+
+  const isPublished = c.status === "published";
+  const patientInfo = c.patient && (c.patient.age || c.patient.gender || c.patient.symptomOnset)
+    ? `🧑‍⚕️ <strong>Edad:</strong> ${c.patient.age || '—'} &nbsp;&nbsp;|&nbsp;&nbsp; <strong>Género:</strong> ${c.patient.gender || '—'} &nbsp;&nbsp;|&nbsp;&nbsp; <strong>Inicio de síntomas:</strong> ${c.patient.symptomOnset || '—'}`
+    : "Sin datos demográficos.";
+
+  // Organizar los resultados por categorías
+  const categories = {
+    patient: { label: "👨‍👩‍👧‍👦 Datos Clínicos y Antecedentes", items: [] },
+    lab: { label: "🔬 Estudios de Laboratorio y Genética", items: [] },
+    consult: { label: "🧑‍⚕️💬 Interconsultas y Evaluaciones", items: [] }
+  };
+
+  Object.entries(c.results).forEach(([key, val]) => {
+    // Ocultar la ficha de información general porque ya se edita en la tarjeta superior
+    if (key === "info-paciente::general") return;
+
+    const parts = key.split("::");
+    const typeId = parts[0];
+    const typeObj = STUDY_TYPES.find(t => t.id === typeId);
+    const displayKey = parts.length === 3
+      ? `${parts[1]} › ${parts[2]}`
+      : parts.slice(1).join(" › ");
+
+    const item = {
+      key,
+      val,
+      typeId,
+      typeObj,
+      displayKey
+    };
+
+    if (typeId === "antecedentes" || typeId === "info-paciente") {
+      categories.patient.items.push(item);
+    } else if (typeId === "interconsulta") {
+      categories.consult.items.push(item);
+    } else {
+      categories.lab.items.push(item);
+    }
+  });
+
+  const totalItems = categories.patient.items.length + categories.lab.items.length + categories.consult.items.length;
+
+  container.innerHTML = `
+    <!-- Case Header -->
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:1px solid var(--border); padding-bottom:1rem; flex-wrap:wrap; gap:1rem;">
+      <div style="flex: 1; min-width: 200px;">
+        <h2 style="font-size:1.25rem; margin:0; display:flex; align-items:center; gap:0.5rem; color:var(--text-primary);">
+          ${c.name}
+          <span style="font-size:0.7rem; font-weight:700; padding:0.15rem 0.45rem; border-radius:1rem; background:${isPublished ? 'rgba(16,185,129,0.1)' : 'rgba(255,255,255,0.05)'}; color:${isPublished ? 'var(--success)' : 'var(--text-muted)'};">
+            ${isPublished ? '🟢 Publicado' : '⚪ Borrador'}
+          </span>
+        </h2>
+        <p style="margin:0.25rem 0 0 0; font-size:0.85rem; color:var(--text-secondary);">${c.description || 'Sin descripción clínica.'}</p>
+      </div>
+      
+      <div class="btn-group" style="display:flex; gap:0.4rem;">
+        <button class="btn-status-toggle ${isPublished ? 'toggle-unpublish' : 'toggle-publish'}" onclick="toggleCaseStatus('${c.id}')" style="font-size:0.78rem; padding:0.4rem 0.8rem; border-radius: var(--radius-md);">
+          ${isPublished ? '⏸ Borrador' : '▶ Publicar'}
+        </button>
+        <button class="btn-admin-secondary danger" onclick="deleteCase('${c.id}')" style="font-size:0.78rem; padding:0.4rem 0.8rem; border-radius: var(--radius-md);">
+          🗑 Borrar Caso
+        </button>
+      </div>
+    </div>
+
+    <!-- Patient Info Card -->
+    <div style="background:rgba(255,255,255,0.015); border:1px solid var(--border); border-radius:var(--radius-md); padding:0.85rem 1rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
+      <div style="font-size:0.85rem; color:var(--text-primary);">
+        ${patientInfo}
+      </div>
+      <button class="btn-admin-secondary" onclick="openPatientModal('${c.id}')" style="font-size:0.78rem; padding:0.4rem 0.75rem;">
+        ✏️ Editar Ficha
+      </button>
+    </div>
+
+    <!-- Study Results Grid -->
+    <div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
+        <h3 style="font-size:0.95rem; font-weight:700; color:var(--text-primary); margin:0;">Resultados de Estudios y Consultas</h3>
+        <button class="btn-admin-primary" onclick="openAddResultModal('${c.id}')" style="font-size:0.78rem; padding:0.4rem 0.8rem;">
+          + Agregar Resultado
+        </button>
+      </div>
+
+      <div class="results-sections-wrapper" style="max-height:420px; overflow-y:auto; padding-right:0.25rem; display:flex; flex-direction:column; gap:1.25rem;">
+        ${totalItems === 0
+          ? `<p class="empty-msg" style="padding:2rem 0; text-align:center; font-style:italic; font-size:0.85rem; color:var(--text-muted);">No hay estudios cargados para este caso.</p>`
+          : Object.entries(categories).map(([catKey, cat]) => {
+              if (cat.items.length === 0) return "";
+              return `
+                <div class="category-block" style="display:flex; flex-direction:column; gap:0.5rem;">
+                  <h4 style="font-size:0.75rem; font-weight:700; color:var(--primary-light); text-transform:uppercase; letter-spacing:0.06em; margin:0 0 0.25rem 0;">
+                    ${cat.label}
+                  </h4>
+                  <div style="display:flex; flex-direction:column; gap:0.5rem;">
+                    ${cat.items.map(item => `
+                      <div class="result-admin-item" style="display:flex; align-items:center; padding:0.65rem 0.85rem; border-radius:var(--radius-md); border:1px solid var(--border); background:rgba(255,255,255,0.015); gap:1rem;">
+                        <div class="result-admin-actions" style="display:flex; gap:0.35rem; flex-shrink:0;">
+                          <button class="btn-icon-sm" onclick="editResult('${c.id}', '${item.key}')" style="display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px;">✏️</button>
+                          <button class="btn-icon-sm danger" onclick="deleteResult('${c.id}', '${item.key}')" style="display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px;">🗑</button>
+                        </div>
+                        <div style="flex:1; min-width:0;">
+                          <div style="display:flex; align-items:center; gap:0.4rem; margin-bottom:0.2rem; flex-wrap:wrap;">
+                            <span class="result-type-badge" style="font-size:0.65rem; font-weight:700; text-transform:uppercase; background:var(--primary-glow); color:var(--primary-light); padding:0.15rem 0.4rem; border-radius:4px;">
+                              ${item.typeObj ? item.typeObj.icon + " " + item.typeObj.label : item.typeId}
+                            </span>
+                            <span style="font-size:0.78rem; font-weight:700; color:var(--text-primary);">${item.displayKey}</span>
+                          </div>
+                          <p class="result-preview" style="margin:0; font-size:0.78rem; color:var(--text-secondary); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; text-overflow:ellipsis;" title="${item.val.replace(/"/g, '&quot;')}">
+                            ${item.val}
+                          </p>
+                        </div>
+                      </div>
+                    `).join("")}
+                  </div>
+                </div>
+              `;
+            }).join("")}
+      </div>
+    </div>
+  `;
+}
+
+async function syncLocalCasesToSupabase() {
+  if (!confirm("¿Deseas subir todos los casos cargados localmente en EGC_CASES a Supabase? Esto sobreescribirá los existentes con el mismo ID.")) return;
+  const casesToSync = window.EGC_CASES || [];
+  if (casesToSync.length === 0) {
+    showAdminToast("No se encontraron casos locales en memoria", "error");
+    return;
+  }
+
+  showAdminToast("Sincronizando casos con Supabase...");
+  let count = 0;
+  for (const c of casesToSync) {
+    try {
+      const { error } = await supabaseClient
+        .from('cases')
+        .upsert({
+          id: c.id,
+          name: c.name,
+          description: c.description || "",
+          status: c.status || "published",
+          patient: c.patient || {},
+          results: c.results || {}
+        });
+      if (error) throw error;
+      count++;
+    } catch (err) {
+      console.error(`Error al subir el caso ${c.id}:`, err);
+    }
+  }
+
+  await refreshAdminData();
+  const content = document.getElementById("admin-content");
+  renderCasesTab(content);
+  showAdminToast(`Sincronización completa: ${count} casos importados.`);
+}
+
+async function toggleCaseStatus(caseId) {
+  const c = dbCases.find(x => x.id === caseId);
   if (!c) return;
-  c.status = c.status === "published" ? "draft" : "published";
-  saveData(data);
-  renderCasesList(data.cases);
-  showAdminToast(c.status === "published" ? "🟢 Caso publicado — visible para estudiantes" : "⚪ Caso pasado a borrador");
+  const newStatus = c.status === "published" ? "draft" : "published";
+  
+  try {
+    const { error } = await supabaseClient
+      .from('cases')
+      .update({ status: newStatus })
+      .eq('id', caseId);
+
+    if (error) throw error;
+    
+    await refreshAdminData();
+    const content = document.getElementById("admin-content");
+    renderCasesTab(content);
+    showAdminToast(newStatus === "published" ? "🟢 Caso publicado — visible para estudiantes" : "⚪ Caso pasado a borrador");
+  } catch (err) {
+    console.error("Error al cambiar estado del caso:", err);
+    showAdminToast("Error al guardar en Supabase", "error");
+  }
 }
 
 function buildCaseModal() {
@@ -544,7 +737,7 @@ function buildCaseModal() {
         <div class="modal-header"><h3>Nuevo Caso Clínico</h3><button class="modal-close" data-modal="case-modal">✕</button></div>
         <form id="case-form" onsubmit="addCase(event)">
           <div class="form-group"><label>Nombre del caso</label><input type="text" id="case-name" required placeholder="Caso 4 — Paciente con..."></div>
-          <div class="form-group"><label>Descripción clínica breve</label><textarea id="case-desc" rows="3" required></textarea></div>
+          <div class="form-group"><label>Mensaje de bienvenida / Motivo de consulta (visible para estudiantes)</label><textarea id="case-desc" rows="3" required placeholder="Ej: Hola doctor, me han recomendado mucho que me atienda con usted..."></textarea></div>
           <div class="form-group"><label>Edad del paciente</label><input type="text" id="case-age" placeholder="Ej: 8 años, 24 años..."></div>
           <div class="form-group"><label>Género</label>
             <select id="case-gender">
@@ -563,20 +756,44 @@ function buildCaseModal() {
 function buildPatientModal() {
   return `
     <div class="modal-overlay" id="patient-modal">
-      <div class="modal">
-        <div class="modal-header"><h3>Datos Demográficos del Paciente</h3><button class="modal-close" data-modal="patient-modal">✕</button></div>
+      <div class="modal modal-lg">
+        <div class="modal-header"><h3>Editar Datos del Caso y Paciente</h3><button class="modal-close" data-modal="patient-modal">✕</button></div>
         <form id="patient-form" onsubmit="savePatientData(event)">
           <input type="hidden" id="patient-case-id">
-          <div class="form-group"><label>Edad</label><input type="text" id="patient-age" required></div>
-          <div class="form-group"><label>Género</label>
+          
+          <h4 style="margin: 0 0 0.75rem 0; font-size: 0.85rem; text-transform: uppercase; color: var(--primary-light); letter-spacing: 0.05em; border-bottom: 1px dashed var(--border); padding-bottom: 0.25rem;">Información del Caso</h4>
+          <div class="form-group">
+            <label>Nombre del Caso</label>
+            <input type="text" id="patient-case-name" required placeholder="Ej: Caso 1">
+          </div>
+          <div class="form-group">
+            <label>Mensaje de bienvenida / Motivo de consulta (visible para estudiantes)</label>
+            <textarea id="patient-case-desc" rows="2" required placeholder="Ej: Hola doctor, me han recomendado mucho que me atienda con usted..."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Anotación Interna / Diagnóstico (Solo visible para docentes)</label>
+            <input type="text" id="patient-internal-notes" placeholder="Ej: Síndrome de Wiskott-Aldrich, XLA, LAD-1...">
+          </div>
+
+          <h4 style="margin: 1.25rem 0 0.75rem 0; font-size: 0.85rem; text-transform: uppercase; color: var(--primary-light); letter-spacing: 0.05em; border-bottom: 1px dashed var(--border); padding-bottom: 0.25rem;">Ficha Demográfica del Paciente</h4>
+          <div class="form-group">
+            <label>Edad</label>
+            <input type="text" id="patient-age" required placeholder="Ej: 8 años, 18 meses...">
+          </div>
+          <div class="form-group">
+            <label>Género</label>
             <select id="patient-gender">
               <option value="Masculino">Masculino</option>
               <option value="Femenino">Femenino</option>
               <option value="No especificado">No especificado</option>
             </select>
           </div>
-          <div class="form-group"><label>Inicio de síntomas</label><input type="text" id="patient-onset" placeholder="Ej: Desde los 6 meses de vida"></div>
-          <button type="submit" class="btn-admin-primary full-width">Guardar</button>
+          <div class="form-group">
+            <label>Inicio de síntomas</label>
+            <input type="text" id="patient-onset" placeholder="Ej: Desde los 6 meses de vida">
+          </div>
+          
+          <button type="submit" class="btn-admin-primary full-width" style="margin-top:0.5rem;">Guardar Cambios</button>
         </form>
       </div>
     </div>`;
@@ -645,41 +862,67 @@ function openAddResultModal(caseId) {
 }
 
 function openPatientModal(caseId) {
-  const data = getData();
-  const c = data.cases.find(x => x.id === caseId);
+  const c = dbCases.find(x => x.id === caseId);
   if (!c) return;
   document.getElementById("patient-case-id").value = caseId;
+  document.getElementById("patient-case-name").value = c.name || "";
+  document.getElementById("patient-case-desc").value = c.description || "";
+  document.getElementById("patient-internal-notes").value = c.internal_notes || "";
   document.getElementById("patient-age").value = c.patient?.age || "";
   document.getElementById("patient-gender").value = c.patient?.gender || "Masculino";
   document.getElementById("patient-onset").value = c.patient?.symptomOnset || "";
   document.getElementById("patient-modal").classList.add("open");
 }
 
-function savePatientData(e) {
+async function savePatientData(e) {
   e.preventDefault();
   const caseId = document.getElementById("patient-case-id").value;
-  const data = getData();
-  const c = data.cases.find(x => x.id === caseId);
+  const c = dbCases.find(x => x.id === caseId);
   if (!c) return;
-  c.patient = {
+
+  const name = document.getElementById("patient-case-name").value.trim();
+  const description = document.getElementById("patient-case-desc").value.trim();
+  const internal_notes = document.getElementById("patient-internal-notes").value.trim();
+
+  const patient = {
     age: document.getElementById("patient-age").value.trim(),
     gender: document.getElementById("patient-gender").value,
     symptomOnset: document.getElementById("patient-onset").value.trim()
   };
-  // Actualizar también el resultado de info-paciente si existe
+
+  // Actualizar también el resultado de info-paciente si no existe o actualizarlo
   const infoKey = "info-paciente::general";
-  if (!c.results[infoKey]) {
-    c.results[infoKey] = `INFORMACIÓN DEL PACIENTE:\n• Edad: ${c.patient.age}\n• Género: ${c.patient.gender}\n• Inicio de síntomas: ${c.patient.symptomOnset}`;
+  const results = { ...c.results };
+  results[infoKey] = `INFORMACIÓN DEL PACIENTE:\n• Edad: ${patient.age}\n• Género: ${patient.gender}\n• Inicio de síntomas: ${patient.symptomOnset}`;
+
+  try {
+    const { error } = await supabaseClient
+      .from('cases')
+      .update({ 
+        name, 
+        description, 
+        internal_notes, 
+        patient, 
+        results 
+      })
+      .eq('id', caseId);
+
+    if (error) throw error;
+
+    document.getElementById("patient-modal").classList.remove("open");
+    await refreshAdminData();
+    // Volver a renderizar la pestaña entera para que se actualice el nombre en la barra lateral
+    const content = document.getElementById("admin-content");
+    renderCasesTab(content);
+    showAdminToast("Datos del caso y paciente actualizados");
+  } catch (err) {
+    console.error("Error al actualizar datos en Supabase:", err);
+    showAdminToast("Error de conexión", "error");
   }
-  saveData(data);
-  document.getElementById("patient-modal").classList.remove("open");
-  renderCasesList(data.cases);
-  showAdminToast("Datos del paciente actualizados");
 }
 
 function editResult(caseId, key) {
-  const data = getData();
-  const c = data.cases.find(x => x.id === caseId);
+  const c = dbCases.find(x => x.id === caseId);
   if (!c) return;
   const parts = key.split("::");
   const typeId = parts[0];
@@ -701,42 +944,57 @@ function editResult(caseId, key) {
   document.getElementById("result-modal").classList.add("open");
 }
 
-function addCase(e) {
+async function addCase(e) {
   e.preventDefault();
   const name = document.getElementById("case-name").value.trim();
   const desc = document.getElementById("case-desc").value.trim();
   const age = document.getElementById("case-age").value.trim() || "—";
   const gender = document.getElementById("case-gender").value;
   const onset = document.getElementById("case-onset").value.trim() || "—";
-  const data = getData();
+  
   const id = "caso-" + Date.now();
   const infoText = `INFORMACIÓN DEL PACIENTE:\n• Edad: ${age}\n• Género: ${gender}\n• Inicio de síntomas: ${onset}`;
-  data.cases.push({
-    id, name, description: desc, status: "draft",
-    patient: { age, gender, symptomOnset: onset },
-    results: { "info-paciente::general": infoText }
-  });
-  saveData(data);
-  document.getElementById("case-modal").classList.remove("open");
-  renderCasesList(data.cases);
-  showAdminToast("Caso creado (en borrador)");
+  
+  try {
+    const { error } = await supabaseClient
+      .from('cases')
+      .insert({
+        id,
+        name,
+        description: desc,
+        status: "draft",
+        patient: { age, gender, symptomOnset: onset },
+        results: { "info-paciente::general": infoText }
+      });
+
+    if (error) throw error;
+
+    document.getElementById("case-modal").classList.remove("open");
+    selectedCaseId = id; // Auto-select the newly created case
+    await refreshAdminData();
+    const content = document.getElementById("admin-content");
+    renderCasesTab(content);
+    showAdminToast("Caso creado en Supabase (en borrador)");
+  } catch (err) {
+    console.error("Error al crear caso en Supabase:", err);
+    showAdminToast("Error de conexión", "error");
+  }
 }
 
-function saveResult(e) {
+async function saveResult(e) {
   e.preventDefault();
   const caseId = document.getElementById("result-case-id").value;
   const originalKey = document.getElementById("result-original-key").value;
   const typeId = document.getElementById("result-study-type").value;
   const type = STUDY_TYPES.find(t => t.id === typeId);
   const text = document.getElementById("result-text").value.trim();
-  const data = getData();
-  const c = data.cases.find(x => x.id === caseId);
+  
+  const c = dbCases.find(x => x.id === caseId);
   if (!c) return;
 
   let key;
   if (type?.hasSub) {
     const subtypeVal = document.getElementById("result-subtype")?.value || "";
-    // subtypeVal is "typeId::subtypeId"
     const subtypeId = subtypeVal.split("::")[1] || "";
     const target = document.getElementById("result-target")?.value.trim() || "";
     key = `${typeId}::${subtypeId}::${target}`;
@@ -747,99 +1005,158 @@ function saveResult(e) {
     key = `${typeId}::${target}`;
   }
 
-  if (originalKey && originalKey !== key) delete c.results[originalKey];
-  c.results[key] = text;
-  saveData(data);
-  document.getElementById("result-modal").classList.remove("open");
-  renderCasesList(data.cases);
-  showAdminToast("Resultado guardado");
+  const results = { ...c.results };
+  if (originalKey && originalKey !== key) delete results[originalKey];
+  results[key] = text;
+
+  try {
+    const { error } = await supabaseClient
+      .from('cases')
+      .update({ results })
+      .eq('id', caseId);
+
+    if (error) throw error;
+
+    document.getElementById("result-modal").classList.remove("open");
+    await refreshAdminData();
+    renderSelectedCaseDetail();
+    showAdminToast("Resultado guardado en Supabase");
+  } catch (err) {
+    console.error("Error al guardar resultado en Supabase:", err);
+    showAdminToast("Error de conexión", "error");
+  }
 }
 
-function deleteResult(caseId, key) {
+async function deleteResult(caseId, key) {
   if (!confirm("¿Eliminar este resultado?")) return;
-  const data = getData();
-  const c = data.cases.find(x => x.id === caseId);
-  if (c) delete c.results[key];
-  saveData(data);
-  renderCasesList(data.cases);
-  showAdminToast("Resultado eliminado");
+  const c = dbCases.find(x => x.id === caseId);
+  if (!c) return;
+
+  const results = { ...c.results };
+  delete results[key];
+
+  try {
+    const { error } = await supabaseClient
+      .from('cases')
+      .update({ results })
+      .eq('id', caseId);
+
+    if (error) throw error;
+
+    await refreshAdminData();
+    renderSelectedCaseDetail();
+    showAdminToast("Resultado eliminado de Supabase");
+  } catch (err) {
+    console.error("Error al eliminar resultado en Supabase:", err);
+    showAdminToast("Error de conexión", "error");
+  }
 }
 
-function deleteCase(caseId) {
-  if (!confirm("¿Eliminar este caso y todos sus resultados?")) return;
-  const data = getData();
-  data.cases = data.cases.filter(c => c.id !== caseId);
-  saveData(data);
-  renderCasesList(data.cases);
-  showAdminToast("Caso eliminado");
-}
+async function deleteCase(caseId) {
+  if (!confirm("¿Eliminar este caso y todos sus resultados de Supabase?")) return;
+  try {
+    const { error } = await supabaseClient
+      .from('cases')
+      .delete()
+      .eq('id', caseId);
 
-// ──────────────────────────────────────────────
-// TAB: CONFIGURACIÓN
-// ──────────────────────────────────────────────
+    if (error) throw error;
+
+    selectedCaseId = null; // Clear selection
+    await refreshAdminData();
+    const content = document.getElementById("admin-content");
+    renderCasesTab(content);
+    showAdminToast("Caso eliminado de Supabase");
+  } catch (err) {
+    console.error("Error al eliminar caso en Supabase:", err);
+    showAdminToast("Error de conexión", "error");
+  }
+}
 
 function renderSettingsTab(container) {
-  const data = getData();
-  const mode = data.settings?.queryMode || "both";
+  const mode = cachedQueryMode || "both";
+  const tokenLimit = cachedTokensLimit || 15;
 
   container.innerHTML = `
     <div class="admin-section">
       <div class="admin-section-header"><h2>Configuración del Examen</h2></div>
 
-      <div class="settings-card">
+      <div class="settings-card" style="background:var(--bg-card); border:1px solid var(--border); padding:1.5rem; border-radius:var(--radius-lg); margin-bottom:1.5rem;">
         <h3>🔍 Modo de Consulta para Estudiantes</h3>
-        <p style="margin-bottom:1.25rem;">Controlá qué interfaz ven los estudiantes al solicitar estudios.</p>
-        <div class="mode-options">
-          <label class="mode-option ${mode === 'both' ? 'active' : ''}">
-            <input type="radio" name="query-mode" value="both" ${mode === 'both' ? 'checked' : ''} onchange="saveQueryMode(this.value)">
+        <p style="margin-bottom:1.25rem; font-size:0.875rem; color:var(--text-secondary);">Controlá qué interfaz ven los estudiantes al solicitar estudios.</p>
+        <div class="mode-options" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:1rem;">
+          <label class="mode-option ${mode === 'both' ? 'active' : ''}" style="border:1px solid ${mode === 'both' ? 'var(--primary)' : 'var(--border)'}; background:${mode === 'both' ? 'var(--primary-glow)' : 'transparent'}; padding:1rem; border-radius:var(--radius-md); display:block; cursor:pointer;">
+            <input type="radio" name="query-mode" value="both" ${mode === 'both' ? 'checked' : ''} onchange="saveSystemSetting('query_mode', this.value)" style="display:none;">
             <div class="mode-option-content">
-              <span class="mode-icon">🔀</span>
-              <strong>Ambos modos</strong>
-              <p>El estudiante puede usar el modo libre (texto) y el modo guiado (menús). Recomendado.</p>
+              <span class="mode-icon" style="font-size:1.5rem; display:block; margin-bottom:0.25rem;">🔀</span>
+              <strong style="color:var(--text-primary);">Ambos modos</strong>
+              <p style="font-size:0.75rem; color:var(--text-secondary); margin:0.25rem 0 0 0;">El estudiante puede usar el modo libre (texto) y el modo guiado (menús). Recomendado.</p>
             </div>
           </label>
-          <label class="mode-option ${mode === 'free' ? 'active' : ''}">
-            <input type="radio" name="query-mode" value="free" ${mode === 'free' ? 'checked' : ''} onchange="saveQueryMode(this.value)">
+          <label class="mode-option ${mode === 'free' ? 'active' : ''}" style="border:1px solid ${mode === 'free' ? 'var(--primary)' : 'var(--border)'}; background:${mode === 'free' ? 'var(--primary-glow)' : 'transparent'}; padding:1rem; border-radius:var(--radius-md); display:block; cursor:pointer;">
+            <input type="radio" name="query-mode" value="free" ${mode === 'free' ? 'checked' : ''} onchange="saveSystemSetting('query_mode', this.value)" style="display:none;">
             <div class="mode-option-content">
-              <span class="mode-icon">🗣️</span>
-              <strong>Solo modo libre</strong>
-              <p>El estudiante escribe su consulta en lenguaje natural. Más desafiante pedagógicamente.</p>
+              <span class="mode-icon" style="font-size:1.5rem; display:block; margin-bottom:0.25rem;">🗣️</span>
+              <strong style="color:var(--text-primary);">Solo modo libre</strong>
+              <p style="font-size:0.75rem; color:var(--text-secondary); margin:0.25rem 0 0 0;">El estudiante escribe su consulta en lenguaje natural. Más desafiante.</p>
             </div>
           </label>
-          <label class="mode-option ${mode === 'guided' ? 'active' : ''}">
-            <input type="radio" name="query-mode" value="guided" ${mode === 'guided' ? 'checked' : ''} onchange="saveQueryMode(this.value)">
+          <label class="mode-option ${mode === 'guided' ? 'active' : ''}" style="border:1px solid ${mode === 'guided' ? 'var(--primary)' : 'var(--border)'}; background:${mode === 'guided' ? 'var(--primary-glow)' : 'transparent'}; padding:1rem; border-radius:var(--radius-md); display:block; cursor:pointer;">
+            <input type="radio" name="query-mode" value="guided" ${mode === 'guided' ? 'checked' : ''} onchange="saveSystemSetting('query_mode', this.value)" style="display:none;">
             <div class="mode-option-content">
-              <span class="mode-icon">📋</span>
-              <strong>Solo modo guiado</strong>
-              <p>El estudiante usa menús y pestañas para seleccionar el estudio. Más estructurado.</p>
+              <span class="mode-icon" style="font-size:1.5rem; display:block; margin-bottom:0.25rem;">📋</span>
+              <strong style="color:var(--text-primary);">Solo modo guiado</strong>
+              <p style="font-size:0.75rem; color:var(--text-secondary); margin:0.25rem 0 0 0;">El estudiante usa menús y pestañas para seleccionar el estudio.</p>
             </div>
           </label>
         </div>
       </div>
 
-      <div class="settings-card" style="margin-top:1.5rem;">
-        <h3>🪙 Tokens por Estudiante</h3>
-        <p style="margin-bottom:1rem;">Valor actual: <strong>${TOKENS_PER_STUDENT} tokens</strong> por sesión.</p>
-        <p class="form-hint">Para cambiar este valor, editá la constante <code>TOKENS_PER_STUDENT</code> en <code>js/data.js</code> y reseteá los tokens desde la pestaña Estudiantes.</p>
+      <div class="settings-card" style="background:var(--bg-card); border:1px solid var(--border); padding:1.5rem; border-radius:var(--radius-lg); margin-bottom:1.5rem;">
+        <h3>🪙 Límite de Tokens por Caso</h3>
+        <p style="margin-bottom:1rem; font-size:0.875rem; color:var(--text-secondary);">Cantidad de tokens que reciben los alumnos al iniciar cada caso.</p>
+        <div style="display:flex; gap:0.75rem; align-items:center; max-width:300px;">
+          <input type="number" id="settings-token-limit" value="${tokenLimit}" min="1" max="100" style="padding:0.5rem 1rem; border-radius:var(--radius-md); border:1px solid var(--border); background:rgba(0,0,0,0.1); color:var(--text-primary); outline:none; font-size:0.875rem; width:80px; text-align:center;">
+          <button class="btn-admin-primary" onclick="updateTokensSetting()" style="font-size:0.8rem; padding:0.5rem 1rem;">Guardar Tokens</button>
+        </div>
+        <p class="form-hint" style="margin-top:0.75rem; font-size:0.75rem; color:var(--text-muted);">
+          * Nota: Cambiar este límite no alterará los tokens de exámenes que ya fueron iniciados por los estudiantes. Para aplicarlo a todos, hacé clic en "Resetear tokens" en la pestaña Estudiantes.
+        </p>
       </div>
 
-      <div class="settings-card danger-card" style="margin-top:1.5rem;">
+      <div class="settings-card danger-card" style="background:var(--bg-card); border:1px solid var(--border); padding:1.5rem; border-radius:var(--radius-lg);">
         <h3>⚠️ Reiniciar datos</h3>
-        <p style="margin-bottom:1rem;">Borra todo y restaura los datos de ejemplo. <strong>Irreversible.</strong></p>
+        <p style="margin-bottom:1rem; font-size:0.875rem; color:var(--text-secondary);">Borra todo de la base de datos local y restaura los datos de ejemplo.</p>
         <button class="btn-admin-secondary danger" onclick="confirmResetData()">🗑 Restaurar datos de ejemplo</button>
       </div>
     </div>`;
 }
 
-function saveQueryMode(value) {
-  const data = getData();
-  if (!data.settings) data.settings = {};
-  data.settings.queryMode = value;
-  saveData(data);
-  // Actualizar clases visuales
-  document.querySelectorAll(".mode-option").forEach(el => el.classList.remove("active"));
-  document.querySelector(`input[value="${value}"]`)?.closest(".mode-option")?.classList.add("active");
-  showAdminToast(`Modo actualizado: ${value}`);
+async function saveSystemSetting(key, value) {
+  try {
+    const { error } = await supabaseClient
+      .from('settings')
+      .upsert({ key, value });
+    if (error) throw error;
+    showAdminToast(`Configuración de ${key} guardada en Supabase`);
+    await refreshAdminData();
+    const content = document.getElementById("admin-content");
+    renderSettingsTab(content);
+  } catch (err) {
+    console.error("Error al guardar config en Supabase:", err);
+    showAdminToast("Error al guardar configuración", "error");
+  }
+}
+
+async function updateTokensSetting() {
+  const input = document.getElementById("settings-token-limit");
+  if (!input) return;
+  const val = parseInt(input.value, 10);
+  if (isNaN(val) || val < 1 || val > 100) {
+    showAdminToast("Valor de tokens no válido", "error");
+    return;
+  }
+  await saveSystemSetting('tokens_per_student', val.toString());
 }
 
 function confirmResetData() {
