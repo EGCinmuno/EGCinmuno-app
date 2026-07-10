@@ -2,18 +2,87 @@
  * EGCinmuno-App — Panel de Administración v2.1
  */
 
-let adminCurrentTab = "students";
+let dbStudents = [];
 
-document.addEventListener("DOMContentLoaded", () => {
+async function refreshAdminData() {
+  try {
+    const { data: stData, error: stErr } = await supabaseClient
+      .from('students')
+      .select('*');
+    
+    if (stErr) {
+      console.error("Error al obtener estudiantes de Supabase:", stErr);
+      showAdminToast("Error de permisos RLS o conexión al leer estudiantes", "error");
+      return;
+    }
+
+    let tokData = [];
+    const { data: tData, error: tErr } = await supabaseClient
+      .from('student_tokens')
+      .select('*');
+    if (tErr) {
+      console.error("Error al obtener tokens de Supabase (posible RLS):", tErr);
+    } else if (tData) {
+      tokData = tData;
+    }
+
+    let lgData = [];
+    const { data: lData, error: lErr } = await supabaseClient
+      .from('logs')
+      .select('*');
+    if (lErr) {
+      console.error("Error al obtener logs de Supabase (posible RLS):", lErr);
+    } else if (lData) {
+      lgData = lData;
+    }
+
+    dbStudents = stData.map(st => {
+      const tokensPerCase = {};
+      tokData.filter(t => t.student_mail === st.email).forEach(t => {
+        tokensPerCase[t.case_id] = t.tokens_left;
+      });
+
+      const studentLogs = lgData.filter(l => l.student_mail === st.email);
+
+      return {
+        name: st.name,
+        email: st.email || "",
+        role: st.role || "estudiante",
+        tokensPerCase: tokensPerCase,
+        tokensLeft: 15,
+        log: studentLogs.map(l => ({
+          timestamp: l.timestamp,
+          caseId: l.case_id,
+          studyType: l.study_type,
+          target: l.target,
+          resultFound: l.result_found,
+          resultText: l.result_text,
+          typeId: l.type_id,
+          subtypeId: l.subtype_id,
+          rawQuery: l.raw_query
+        }))
+      };
+    });
+  } catch (err) {
+    console.error("Error al refrescar datos desde Supabase:", err);
+  }
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
   initData();
   checkAdminSession();
 
+  if (sessionStorage.getItem("egc_admin") === "true") {
+    await refreshAdminData();
+  }
+
   const loginForm = document.getElementById("admin-login-form");
   if (loginForm) {
-    loginForm.addEventListener("submit", e => {
+    loginForm.addEventListener("submit", async e => {
       e.preventDefault();
       const pw = document.getElementById("admin-password").value;
       if (loginAdmin(pw)) {
+        await refreshAdminData();
         showAdminApp();
       } else {
         showLoginError("Contraseña incorrecta");
@@ -59,11 +128,18 @@ function renderAdminNav() {
   });
 }
 
-function switchAdminTab(tab) {
+let adminCurrentTab = "students";
+
+async function switchAdminTab(tab) {
   adminCurrentTab = tab;
   document.querySelectorAll(".admin-nav-btn").forEach(b => b.classList.toggle("active", b.dataset.tab === tab));
   const content = document.getElementById("admin-content");
   content.innerHTML = "";
+  
+  if (tab === "students" || tab === "log") {
+    await refreshAdminData();
+  }
+  
   if (tab === "students") renderStudentsTab(content);
   else if (tab === "cases") renderCasesTab(content);
   else if (tab === "settings") renderSettingsTab(content);
@@ -75,7 +151,6 @@ function switchAdminTab(tab) {
 // ──────────────────────────────────────────────
 
 function renderStudentsTab(container) {
-  const data = getData();
   container.innerHTML = `
     <div class="admin-section">
       <div class="admin-section-header">
@@ -84,15 +159,15 @@ function renderStudentsTab(container) {
       </div>
       <div class="admin-stats">
         <div class="stat-card">
-          <span class="stat-num">${data.students.length}</span>
+          <span class="stat-num">${dbStudents.length}</span>
           <span class="stat-label">Total</span>
         </div>
         <div class="stat-card">
-          <span class="stat-num">${data.students.filter(s => s.tokensLeft > 0).length}</span>
-          <span class="stat-label">Con tokens</span>
+          <span class="stat-num">${dbStudents.filter(s => s.role !== 'docente').length}</span>
+          <span class="stat-label">Estudiantes</span>
         </div>
         <div class="stat-card">
-          <span class="stat-num">${data.students.filter(s => s.log.length > 0).length}</span>
+          <span class="stat-num">${dbStudents.filter(s => s.log.length > 0).length}</span>
           <span class="stat-label">Han consultado</span>
         </div>
       </div>
@@ -111,7 +186,7 @@ function renderStudentsTab(container) {
     ${buildAddStudentModal()}
     ${buildBulkImportModal()}
   `;
-  renderStudentsTable(data.students);
+  renderStudentsTable(dbStudents);
   bindModalCloses();
 }
 
@@ -128,25 +203,21 @@ function renderStudentsTable(students, filter = "") {
   tbody.innerHTML = filtered.map(s => {
     let tokensPillsHTML = "";
     cases.forEach(c => {
-      const caseTokens = s.tokensPerCase && s.tokensPerCase[c.id] !== undefined ? s.tokensPerCase[c.id] : TOKENS_PER_STUDENT;
+      const caseTokens = s.tokensPerCase && s.tokensPerCase[c.id] !== undefined ? s.tokensPerCase[c.id] : (s.role === 'docente' ? 999 : TOKENS_PER_STUDENT);
       const statusClass = caseTokens === 0 ? 'empty' : caseTokens <= 2 ? 'low' : 'ok';
       const label = c.name.split("—")[0].trim().split(" ")[0] + " " + (c.name.split("—")[0].trim().split(" ")[1] || "");
       tokensPillsHTML += `
         <div style="font-size:0.65rem; margin-bottom:2px; display:inline-block; margin-right:4px;">
           <span class="token-pill ${statusClass}" style="padding: 2px 4px; font-size: 0.65rem;" title="${c.name}">
-            ${label}: ${caseTokens}/${TOKENS_PER_STUDENT}
+            ${label}: ${caseTokens}/${s.role === 'docente' ? 999 : TOKENS_PER_STUDENT}
           </span>
         </div>
       `;
     });
-    
-    if (cases.length === 0) {
-      tokensPillsHTML = `<span class="token-pill ok">${s.tokensLeft}/${TOKENS_PER_STUDENT}</span>`;
-    }
 
     return `
       <tr>
-        <td><strong>${s.name}</strong></td>
+        <td><strong>${s.name}</strong> ${s.role === 'docente' ? '<span style="font-size:0.7rem;color:var(--primary-light);font-weight:600;">(Docente)</span>' : ''}</td>
         <td class="text-muted">${s.email}</td>
         <td><div style="max-width:300px; display:flex; flex-wrap:wrap; gap:2px;">${tokensPillsHTML}</div></td>
         <td>${s.log.length}</td>
@@ -160,9 +231,9 @@ function renderStudentsTable(students, filter = "") {
   }).join("") || `<tr><td colspan="5" class="empty-row">Sin estudiantes</td></tr>`;
 }
 
-function filterStudents(val) { renderStudentsTable(getData().students, val); }
+function filterStudents(val) { renderStudentsTable(dbStudents, val); }
 
-function editStudentTokens(name, currentTokens) {
+async function editStudentTokens(name, currentTokens) {
   const newVal = prompt(`Ingrese la nueva cantidad de tokens POR CASO para ${name}:`, currentTokens);
   if (newVal === null || newVal.trim() === "") return;
   const tokens = parseInt(newVal, 10);
@@ -170,64 +241,108 @@ function editStudentTokens(name, currentTokens) {
     showAdminToast("Cantidad inválida", "error");
     return;
   }
-  const data = getData();
-  const idx = data.students.findIndex(s => normalize(s.name) === normalize(name));
-  if (idx === -1) return;
-  
-  data.students[idx].tokensLeft = tokens;
-  if (!data.students[idx].tokensPerCase) data.students[idx].tokensPerCase = {};
-  data.cases.forEach(c => {
-    data.students[idx].tokensPerCase[c.id] = tokens;
-  });
-  
-  saveData(data);
-  renderStudentsTable(data.students);
-  showAdminToast(`Tokens de ${name} actualizados a ${tokens} por caso`);
+
+  try {
+    const data = getData();
+    const cases = data.cases || [];
+    const email = dbStudents.find(s => s.name === name)?.email || "";
+
+    for (const c of cases) {
+      const { data: existing } = await supabaseClient
+        .from('student_tokens')
+        .select('*')
+        .eq('student_mail', email)
+        .eq('case_id', c.id)
+        .maybeSingle();
+
+      if (existing) {
+        await supabaseClient
+          .from('student_tokens')
+          .update({ tokens_left: tokens })
+          .eq('id', existing.id);
+      } else {
+        await supabaseClient
+          .from('student_tokens')
+          .insert({
+            student_mail: email,
+            case_id: c.id,
+            tokens_left: tokens
+          });
+      }
+    }
+
+    await refreshAdminData();
+    renderStudentsTable(dbStudents);
+    showAdminToast(`Tokens de ${name} actualizados a ${tokens} por caso`);
+  } catch (err) {
+    console.error("Error al actualizar tokens en Supabase:", err);
+    showAdminToast("Error de conexión", "error");
+  }
 }
 
-function resetStudentTokens(name) {
-  const data = getData();
-  const idx = data.students.findIndex(s => normalize(s.name) === normalize(name));
-  if (idx === -1) return;
-  
-  data.students[idx].tokensLeft = TOKENS_PER_STUDENT;
-  data.students[idx].tokensPerCase = {};
-  
-  saveData(data);
-  renderStudentsTable(data.students);
-  showAdminToast(`Tokens reseteados por caso para ${name}`);
+async function resetStudentTokens(name) {
+  if (!confirm(`¿Resetear tokens y borrar logs de ${name}?`)) return;
+  try {
+    const email = dbStudents.find(s => s.name === name)?.email || "";
+    await supabaseClient.from('student_tokens').delete().eq('student_mail', email);
+    await supabaseClient.from('logs').delete().eq('student_mail', email);
+
+    await refreshAdminData();
+    renderStudentsTable(dbStudents);
+    showAdminToast(`Tokens reseteados y logs eliminados para ${name}`);
+  } catch (err) {
+    console.error("Error al resetear tokens:", err);
+    showAdminToast("Error de conexión", "error");
+  }
 }
 
-function resetAllTokens() {
-  if (!confirm("¿Resetear tokens de TODOS los estudiantes?")) return;
-  const data = getData();
-  data.students.forEach(s => {
-    s.tokensLeft = TOKENS_PER_STUDENT;
-    s.tokensPerCase = {};
-  });
-  saveData(data);
-  renderStudentsTable(data.students);
-  showAdminToast("Tokens reseteados por caso para todos");
+async function resetAllTokens() {
+  if (!confirm("¿Resetear tokens y borrar logs de TODOS los estudiantes?")) return;
+  try {
+    await supabaseClient.from('student_tokens').delete().neq('student_mail', '');
+    await supabaseClient.from('logs').delete().neq('student_mail', '');
+
+    await refreshAdminData();
+    renderStudentsTable(dbStudents);
+    showAdminToast("Tokens y logs reseteados para todos");
+  } catch (err) {
+    console.error("Error al resetear todos los tokens:", err);
+    showAdminToast("Error de conexión", "error");
+  }
 }
 
-function deleteStudent(name) {
-  if (!confirm(`¿Eliminar a ${name}?`)) return;
-  const data = getData();
-  data.students = data.students.filter(s => normalize(s.name) !== normalize(name));
-  saveData(data);
-  renderStudentsTable(data.students);
-  showAdminToast(`${name} eliminado`);
+async function deleteStudent(name) {
+  if (!confirm(`¿Eliminar a ${name} y borrar todos sus registros?`)) return;
+  try {
+    const email = dbStudents.find(s => s.name === name)?.email || "";
+    await supabaseClient.from('students').delete().eq('email', email);
+    await supabaseClient.from('student_tokens').delete().eq('student_mail', email);
+    await supabaseClient.from('logs').delete().eq('student_mail', email);
+
+    await refreshAdminData();
+    renderStudentsTable(dbStudents);
+    showAdminToast(`${name} eliminado de Supabase`);
+  } catch (err) {
+    console.error("Error al eliminar estudiante:", err);
+    showAdminToast("Error de conexión", "error");
+  }
 }
 
 function buildAddStudentModal() {
   return `
     <div class="modal-overlay" id="add-student-modal">
       <div class="modal">
-        <div class="modal-header"><h3>Agregar Estudiante</h3><button class="modal-close" data-modal="add-student-modal">✕</button></div>
+        <div class="modal-header"><h3>Agregar Estudiante / Docente</h3><button class="modal-close" data-modal="add-student-modal">✕</button></div>
         <form id="add-student-form" onsubmit="addStudent(event)">
           <div class="form-group"><label>Nombre completo</label><input type="text" id="new-student-name" required></div>
           <div class="form-group"><label>Email</label><input type="email" id="new-student-email" required></div>
-          <div class="form-group"><label>Tokens iniciales</label><input type="number" id="new-student-tokens" value="${TOKENS_PER_STUDENT}" min="1" max="20"></div>
+          <div class="form-group">
+            <label>Rol</label>
+            <select id="new-student-role" style="width:100%; padding:0.5rem; background:var(--bg-input); border:1px solid var(--border); border-radius:var(--radius-md); color:var(--text-primary); font-size:0.875rem;">
+              <option value="estudiante">Estudiante</option>
+              <option value="docente">Docente</option>
+            </select>
+          </div>
           <button type="submit" class="btn-admin-primary full-width">Agregar</button>
         </form>
       </div>
@@ -253,41 +368,83 @@ function buildBulkImportModal() {
 function openAddStudentModal() { document.getElementById("add-student-modal").classList.add("open"); }
 function openBulkImportModal() { document.getElementById("bulk-import-modal").classList.add("open"); }
 
-function addStudent(e) {
+async function addStudent(e) {
   e.preventDefault();
   const name = document.getElementById("new-student-name").value.trim();
   const email = document.getElementById("new-student-email").value.trim();
-  const tokens = parseInt(document.getElementById("new-student-tokens").value);
-  const data = getData();
-  if (data.students.some(s => normalize(s.name) === normalize(name))) {
-    showAdminToast("Ya existe un estudiante con ese nombre", "error"); return;
+  const role = document.getElementById("new-student-role").value;
+
+  if (dbStudents.some(s => normalize(s.name) === normalize(name))) {
+    showAdminToast("Ya existe un usuario con ese nombre en Supabase", "error");
+    return;
   }
-  data.students.push({ name, email, tokensLeft: tokens, log: [] });
-  saveData(data);
-  document.getElementById("add-student-modal").classList.remove("open");
-  document.getElementById("add-student-form").reset();
-  renderStudentsTable(data.students);
-  showAdminToast(`${name} agregado`);
+
+  try {
+    const { error } = await supabaseClient
+      .from('students')
+      .insert({
+        name: name,
+        email: email || null,
+        role: role
+      });
+
+    if (error) throw error;
+
+    document.getElementById("add-student-modal").classList.remove("open");
+    document.getElementById("add-student-form").reset();
+
+    await refreshAdminData();
+    renderStudentsTable(dbStudents);
+    showAdminToast(`${name} agregado con éxito (${role})`);
+  } catch (err) {
+    console.error("Error al agregar estudiante:", err);
+    showAdminToast("Error de conexión", "error");
+  }
 }
 
-function processBulkImport() {
+async function processBulkImport() {
   const raw = document.getElementById("bulk-input").value.trim();
   const lines = raw.split("\n").filter(l => l.trim());
-  const data = getData();
   let added = 0, skipped = 0;
-  lines.forEach(line => {
-    const parts = line.split(",").map(p => p.trim());
-    const name = parts[0];
-    const email = parts[1] || `${normalize(name).replace(/\s+/g, ".")}@egcinmuno.edu`;
-    if (!name) return;
-    if (data.students.some(s => normalize(s.name) === normalize(name))) { skipped++; return; }
-    data.students.push({ name, email, tokensLeft: TOKENS_PER_STUDENT, log: [] });
-    added++;
-  });
-  saveData(data);
-  document.getElementById("bulk-result").innerHTML =
-    `<p class="success-msg">✅ ${added} agregado(s).${skipped > 0 ? ` ${skipped} duplicado(s) omitido(s).` : ""}</p>`;
-  renderStudentsTable(data.students);
+
+  try {
+    const insertPayloads = [];
+
+    for (const line of lines) {
+      const parts = line.split(",").map(p => p.trim());
+      const name = parts[0];
+      const email = parts[1] || `${normalize(name).replace(/\s+/g, ".")}@egcinmuno.edu`;
+      if (!name) continue;
+
+      if (dbStudents.some(s => normalize(s.name) === normalize(name))) {
+        skipped++;
+        continue;
+      }
+
+      insertPayloads.push({
+        name: name,
+        email: email,
+        role: 'estudiante'
+      });
+      added++;
+    }
+
+    if (insertPayloads.length > 0) {
+      const { error } = await supabaseClient
+        .from('students')
+        .insert(insertPayloads);
+      if (error) throw error;
+    }
+
+    document.getElementById("bulk-result").innerHTML =
+      `<p class="success-msg">✅ ${added} agregado(s).${skipped > 0 ? ` ${skipped} duplicado(s) omitido(s).` : ""}</p>`;
+
+    await refreshAdminData();
+    renderStudentsTable(dbStudents);
+  } catch (err) {
+    console.error("Error en bulk import:", err);
+    showAdminToast("Error de conexión", "error");
+  }
 }
 
 // ──────────────────────────────────────────────
@@ -697,9 +854,8 @@ function confirmResetData() {
 // ──────────────────────────────────────────────
 
 function renderLogTab(container) {
-  const data = getData();
   const allLogs = [];
-  data.students.forEach(s => s.log.forEach(e => allLogs.push({ ...e, studentName: s.name })));
+  dbStudents.forEach(s => s.log.forEach(e => allLogs.push({ ...e, studentName: s.name })));
   allLogs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
   container.innerHTML = `
@@ -711,7 +867,7 @@ function renderLogTab(container) {
       ${allLogs.length === 0
       ? `<p class="empty-msg">No hay consultas registradas aún.</p>`
       : `<table class="admin-table">
-            <thead><tr><th>Fecha/Hora</th><th>Estudiante</th><th>Caso</th><th>Tipo</th><th>Target</th><th>Resultado</th></tr></thead>
+            <thead><tr><th>Fecha/Hora</th><th>Estudiante</th><th>Caso</th><th>Tipo</th><th>Target</th><th>Consulta Escrita</th><th>Resultado</th></tr></thead>
             <tbody>${allLogs.map(e => `
               <tr>
                 <td class="text-muted">${new Date(e.timestamp).toLocaleString("es-AR")}</td>
@@ -719,6 +875,9 @@ function renderLogTab(container) {
                 <td>${e.caseId}</td>
                 <td>${e.studyType}</td>
                 <td>${e.target}</td>
+                <td style="font-style: italic; color: var(--text-secondary); max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${e.rawQuery || ''}">
+                  ${e.rawQuery || '—'}
+                </td>
                 <td><span class="${e.resultFound ? 'badge-found' : 'badge-missing'}">${e.resultFound ? "✓" : "✗"}</span></td>
               </tr>`).join("")}
             </tbody>
@@ -727,10 +886,9 @@ function renderLogTab(container) {
 }
 
 function exportLog() {
-  const data = getData();
-  let csv = "Fecha,Estudiante,Caso,Tipo de estudio,Target,Resultado encontrado\n";
-  data.students.forEach(s => s.log.forEach(e => {
-    csv += `"${new Date(e.timestamp).toLocaleString("es-AR")}","${s.name}","${e.caseId}","${e.studyType}","${e.target}","${e.resultFound ? "Sí" : "No"}"\n`;
+  let csv = "Fecha,Estudiante,Caso,Tipo de estudio,Target,Consulta Escrita,Resultado encontrado\n";
+  dbStudents.forEach(s => s.log.forEach(e => {
+    csv += `"${new Date(e.timestamp).toLocaleString("es-AR")}","${s.name}","${e.caseId}","${e.studyType}","${e.target}","${e.rawQuery || ''}","${e.resultFound ? "Sí" : "No"}"\n`;
   }));
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);

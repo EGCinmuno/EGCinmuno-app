@@ -54,11 +54,45 @@
 
         <!-- Sin caso seleccionado -->
         <div class="no-case-msg" id="no-case-msg">
-          <span class="no-case-icon">🔬</span>
-          <p>Seleccioná un paciente del panel de la izquierda
-            <br>para consultarle el motivo de la consulta
-            <br>para comenzar a solicitar estudios
-          </p>
+          <div class="welcome-container">
+            <div class="welcome-header">
+              <span class="welcome-logo">🔬</span>
+              <h2>Laboratorio Virtual EGC-Inmuno</h2>
+              <p>Entorno virtual de simulación clínica y diagnóstico inmunológico</p>
+            </div>
+
+            <div class="welcome-card-grid">
+              <div class="welcome-card-step">
+                <div class="step-num">1</div>
+                <h3>Elegir Paciente</h3>
+                <p>Seleccioná uno de los <strong>Casos clínicos</strong> del panel izquierdo para comenzar.<br>Verás
+                  su
+                  ficha y la descripción inicial del cuadro.</p>
+              </div>
+
+              <div class="welcome-card-step">
+                <div class="step-num">2</div>
+                <h3>Interrogar libremente</h3>
+                <p> <strong>Interroga</strong> al paciente sobre sus síntomas, antecedentes o el motivo de consulta.</p>
+              </div>
+
+              <div class="welcome-card-step">
+                <div class="step-num">3</div>
+                <h3>Solicitar Estudios</h3>
+                <p> <strong>Solicitá</strong> análisis usando la barra de búsqueda.</p>
+              </div>
+
+              <div class="welcome-card-step">
+                <div class="step-num">4</div>
+                <h3>Gestionar Recursos</h3>
+                <p>Cada consulta o examen consume <strong>tokens</strong>. Administralos con criterio.</p>
+              </div>
+            </div>
+
+            <div class="welcome-footer-hint">
+              <p>👈 Seleccioná un paciente de la lista de la izquierda para comenzar el examen clínico.</p>
+            </div>
+          </div>
         </div>
 
         <!-- Panel activo (oculto hasta seleccionar caso) -->
@@ -108,6 +142,8 @@
   <!-- ═══ TOAST CONTAINER ═══ -->
   <div id="toast-container"></div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
   <script src="js/cases.js"></script>
   <script src="js/data.js"></script>
   <script src="js/auth.js"></script>

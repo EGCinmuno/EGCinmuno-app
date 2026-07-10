@@ -83,6 +83,7 @@ window.EGC_CASES.push({
     "interconsulta::Neurología": "Neurología: ...",
     "interconsulta::Infectología": "Infectología: ...",
     "interconsulta::Cardiología": "Cardiología: ...",
+    "interconsulta::Neumonología": "Neumonología: ...",
 
     // 🛡️ Autoanticuerpos
     "autoanticuerpos::ANA (FAN)": "Anticuerpos Antinucleares (ANA): ...",

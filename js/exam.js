@@ -9,32 +9,46 @@ let queryHistory = [];
 let pendingFreeQuery = null;  // Bug fix: almacenar el parsed result en lugar de pasar por inline-onclick
 
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   initData();
   session = requireAuth();
   if (!session) return;
   session = syncSession();
 
-  // Restaurar historial desde la sesión guardada
-  queryHistory = session.log.map(entry => {
-    const type = STUDY_TYPES.find(t => t.id === entry.typeId) || { id: "unknown", label: entry.studyType, color: "#666", icon: "📄" };
-    const subtype = type.subtypes ? type.subtypes.find(s => s.id === entry.subtypeId) : null;
-    return {
-      type,
-      subtype,
-      target: entry.target,
-      result: entry.resultText || "⚠️ Resultado de una sesión anterior (sin texto guardado).",
-      found: entry.resultFound,
-      tokensLeft: "—",
-      time: new Date(entry.timestamp),
-      caseId: entry.caseId
-    };
-  }).reverse();
+  // Restaurar historial desde la base de datos de Supabase
+  try {
+    const { data: dbLogs, error } = await supabaseClient
+      .from('logs')
+      .select('*')
+      .eq('student_mail', session.email)
+      .order('timestamp', { ascending: true });
+
+    if (error) {
+      console.error("Error al cargar historial desde Supabase:", error);
+    } else if (dbLogs) {
+      queryHistory = dbLogs.map(entry => {
+        const type = STUDY_TYPES.find(t => t.id === entry.type_id) || { id: "unknown", label: entry.study_type, color: "#666", icon: "📄" };
+        const subtype = type.subtypes ? type.subtypes.find(s => s.id === entry.subtype_id) : null;
+        return {
+          type,
+          subtype,
+          target: entry.target,
+          result: entry.result_text || "⚠️ Sin texto guardado.",
+          found: entry.result_found,
+          tokensLeft: "—",
+          time: new Date(entry.timestamp),
+          caseId: entry.case_id
+        };
+      }).reverse();
+    }
+  } catch (err) {
+    console.error("Excepción al cargar historial de Supabase:", err);
+  }
 
   const data = getData();
   const queryMode = data.settings?.queryMode || "both";
 
-  renderHeader();
+  await renderHeader();
   renderCaseSelector();
 
   // Renderizar el historial restaurado
@@ -55,17 +69,24 @@ document.addEventListener("DOMContentLoaded", () => {
 // HEADER
 // ──────────────────────────────────────────────
 
-function renderHeader() {
+async function renderHeader() {
   document.getElementById("student-name").textContent = session.name;
-  updateTokenBadge();
+  await updateTokenBadge();
 }
 
-function updateTokenBadge() {
+async function updateTokenBadge() {
   const badge = document.getElementById("token-badge");
   const count = document.getElementById("token-count");
   session = syncSession();
-  const caseId = currentCase ? currentCase.id : "";
-  const tokens = getStudentTokens(session, caseId);
+
+  if (!currentCase) {
+    count.textContent = "—";
+    badge.className = "token-badge";
+    return;
+  }
+
+  const caseId = currentCase.id;
+  const tokens = await getStudentTokens(session, caseId);
   count.textContent = tokens;
   badge.className = "token-badge";
   if (tokens <= 1) badge.classList.add("critical");
@@ -106,7 +127,7 @@ function renderCaseSelector() {
   });
 }
 
-function selectCase(c, cardEl) {
+async function selectCase(c, cardEl) {
   currentCase = c;
   document.querySelectorAll(".case-card").forEach(el => el.classList.remove("active"));
   cardEl.classList.add("active");
@@ -116,7 +137,7 @@ function selectCase(c, cardEl) {
   document.getElementById("current-case-name").textContent = c.name;
 
   // Actualizar el marcador de tokens para el caso seleccionado
-  updateTokenBadge();
+  await updateTokenBadge();
 
   // Mostrar info del paciente en el banner del caso
   renderCaseInfoBanner(c);
@@ -226,7 +247,10 @@ function isGenericTarget(typeId, target) {
     "western", "blot", "western blot", "elisa", "dosaje", "dosajes", 
     "citometria", "citometría", "flow", "facs", "segregacion", "segregación",
     "anticuerpo", "anticuerpos", "autoanticuerpo", "autoanticuerpos",
-    "interconsulta", "interconsultas", "derivacion", "derivación"
+    "interconsulta", "interconsultas", "derivacion", "derivación",
+    "flujo", "citometria de flujo", "citometría de flujo", "poblacion", "población", "poblaciones", 
+    "linfocitaria", "linfocitarias", "poblacion linfocitaria", "poblacion celular", 
+    "poblaciones linfocitarias", "poblaciones celulares", "subpoblacion", "subpoblación", "subpoblaciones", "subpoblaciones linfocitarias"
   ];
   return genericWords.includes(normalized);
 }
@@ -236,11 +260,11 @@ function getFindingsForCase(caseId) {
   const c = data.cases.find(x => x.id === caseId);
   if (!c) return {};
 
-  const hasUnlockedOnset = session.log.some(entry => 
+  const hasUnlockedOnset = queryHistory.some(entry => 
     entry.caseId === caseId && 
-    entry.typeId === "info-paciente" && 
+    entry.type.id === "info-paciente" && 
     normalize(entry.target) === "inicio de sintomas" && 
-    entry.resultFound
+    entry.found
   );
 
   const findings = {
@@ -252,9 +276,11 @@ function getFindingsForCase(caseId) {
   };
 
   // Buscar descubrimientos en el historial de sesión de este estudiante
-  session.log.forEach(entry => {
-    if (entry.caseId === caseId && entry.resultFound) {
-      const region = classifyFinding(entry.typeId, entry.subtypeId, entry.target, entry.resultText);
+  queryHistory.forEach(entry => {
+    if (entry.caseId === caseId && entry.found) {
+      const typeId = entry.type.id;
+      const subtypeId = entry.subtype?.id || null;
+      const region = classifyFinding(typeId, subtypeId, entry.target, entry.result);
       if (!findings[region]) {
         findings[region] = {
           title: REGION_METADATA[region].label,
@@ -465,7 +491,15 @@ function renderFreeQueryBar() {
   });
 }
 
-function handleFreeQuery() {
+window.autocompleteQueryInput = function(label) {
+  const input = document.getElementById("free-query-input");
+  if (input) {
+    input.value = label;
+    input.focus();
+  }
+};
+
+async function handleFreeQuery() {
   if (!currentCase) {
     showToast("⚠️ Primero seleccioná un caso clínico", "warning");
     return;
@@ -473,7 +507,7 @@ function handleFreeQuery() {
 
   session = syncSession();
   const caseId = currentCase.id;
-  const currentTokens = getStudentTokens(session, caseId);
+  const currentTokens = await getStudentTokens(session, caseId);
   if (currentTokens <= 0) {
     showToast("❌ Sin tokens disponibles", "error");
     return;
@@ -486,13 +520,16 @@ function handleFreeQuery() {
   const resultDiv = document.getElementById("free-query-result");
 
   if (parsed.confidence === "none" || !parsed.type) {
+    // Registrar consulta fallida en Supabase sin costo de tokens (0 tokens)
+    logFailedQuery(caseId, text);
+
     resultDiv.innerHTML = `
       <div class="free-parse-card error">
         <div class="parse-card-title">⚠️ No pude interpretar tu consulta</div>
         <div class="parse-card-body">
-          <p>Intentá mencionar el tipo de estudio que querés:</p>
+          <p>Intentá mencionar el tipo de estudio que querés (hacé clic para autocompletar):</p>
           <div class="parse-hints">
-            ${STUDY_TYPES.map(t => `<span class="parse-hint-tag">${t.icon} ${t.label}</span>`).join("")}
+            ${STUDY_TYPES.map(t => `<span class="parse-hint-tag clickable-hint" onclick="autocompleteQueryInput('${t.label}')">${t.icon} ${t.label}</span>`).join("")}
           </div>
           <p style="margin-top:0.75rem;font-size:0.8rem;">Ejemplo: <em>"Quiero pedir un Western Blot de BTK"</em> o <em>"Necesito un hemograma"</em></p>
         </div>
@@ -533,13 +570,19 @@ function handleFreeQuery() {
     return;
   }
 
-  pendingFreeQuery = { type: parsed.type, subtype: parsed.subtype, target: targetDisplay };
+  pendingFreeQuery = {
+    type: parsed.type,
+    subtype: parsed.subtype,
+    target: targetDisplay,
+    rawQuery: text,
+    secondaryTypes: parsed.secondaryTypes
+  };
   showConfirmationCardFromPending();
 }
 
 function showFreeQueryFollowup(parsed) {
   const resultDiv = document.getElementById("free-query-result");
-  pendingFreeQuery = { type: parsed.type, subtype: parsed.subtype, target: "" };
+  pendingFreeQuery = { type: parsed.type, subtype: parsed.subtype, target: "", secondaryTypes: parsed.secondaryTypes };
 
   const type = parsed.type;
   let questionText = "";
@@ -569,19 +612,19 @@ function showFreeQueryFollowup(parsed) {
     if (type.id === "western-blot") {
       questionText = `Identificamos que querés solicitar un <strong>Western Blot</strong>. ¿Para qué gen o proteína querés realizarlo?`;
     } else if (type.id === "elisa") {
-      questionText = `Identificamos que querés realizar un <strong>ELISA / Dosaje</strong>. ¿Qué analito, inmunoglobulina o citoquina querés dosar?`;
+      questionText = `Identificamos que querés solicitar un <strong>ELISA / Dosaje</strong>. ¿Para qué inmunoglobulina, citoquina o analito querés realizarlo?`;
     } else if (type.id === "pcr") {
-      questionText = `Identificamos que querés realizar una <strong>Sanger / PCR / RT-PCR</strong>. ¿Para qué gen o transcripto?`;
+      questionText = `Identificamos que querés solicitar un estudio de <strong>Sanger / PCR / RT-PCR</strong>. ¿Para qué gen o transcripto querés realizarlo?`;
     } else if (type.id === "citometria") {
-      questionText = `Identificamos que querés solicitar una <strong>Citometría de Flujo</strong>. ¿Qué marcador o subpoblación celular querés analizar?`;
+      questionText = `Identificamos que querés solicitar una <strong>Citometría de Flujo</strong>. ¿Para qué marcador o subpoblación celular querés realizarla?`;
     } else if (type.id === "interconsulta") {
-      questionText = `Identificamos que querés realizar una <strong>Interconsulta Médica</strong>. ¿Con qué especialista o servicio médico?`;
+      questionText = `Identificamos que querés solicitar una <strong>Interconsulta Médica</strong>. ¿Con qué especialidad (ej: Dermatología, Neurología, Neumonología) deseás realizarla?`;
     } else if (type.id === "autoanticuerpos") {
       questionText = `Identificamos que querés medir <strong>Anticuerpos de Autoinmunidad</strong>. ¿Qué anticuerpo específico querés dosar?`;
     } else if (type.id === "vacuna") {
-      questionText = `Identificamos que querés evaluar la <strong>Respuesta a Vacunas</strong>. ¿Para qué vacuna?`;
+      questionText = `Identificamos que querés solicitar un estudio de <strong>Respuesta a Vacunas</strong>. ¿Para qué antígeno vacunal (ej: Tétanos, Neumococo) querés realizarlo?`;
     } else if (type.id === "segregacion") {
-      questionText = `Identificamos que querés solicitar <strong>Segregación Familiar</strong>. ¿De qué gen?`;
+      questionText = `Identificamos que querés solicitar un estudio de <strong>Segregación Familiar</strong>. ¿Para qué gen querés realizarlo?`;
     } else if (type.id === "funcional" && subtype) {
       if (subtype.id === "proliferacion") {
         questionText = `Identificamos: <strong>Ensayo Funcional › Proliferación celular</strong>. ¿Con qué estímulo/mitógeno?`;
@@ -595,7 +638,7 @@ function showFreeQueryFollowup(parsed) {
         questionText = `Identificamos: <strong>Ensayo Funcional › Vía del Interferón</strong>. ¿Para qué gen específico?`;
       }
     } else {
-      questionText = `Identificamos que querés solicitar: <strong>${label}${subtypeDisplay}</strong>. ¿Para qué target, gen o analito?`;
+      questionText = `Identificamos que querés solicitar un estudio de <strong>${label}${subtypeDisplay}</strong>. ¿Para qué target o analito específico querés realizarlo?`;
     }
 
     const placeholder = subtype ? subtype.placeholder : (type.placeholder || "Ej: BTK...");
@@ -607,6 +650,10 @@ function showFreeQueryFollowup(parsed) {
     `;
   }
 
+  const secWarning = (parsed.secondaryTypes && parsed.secondaryTypes.length > 0)
+    ? `<p style="font-size:0.75rem;color:#f59e0b;margin-top:0.5rem;font-weight:600;">⚠️ También detectamos una consulta para '${parsed.secondaryTypes[0].label}'. Podés solicitarla después de confirmar esta.</p>`
+    : "";
+
   resultDiv.innerHTML = `
     <div class="free-parse-card followup">
       <div class="parse-card-title">🔍 Consulta incompleta</div>
@@ -615,12 +662,13 @@ function showFreeQueryFollowup(parsed) {
         <form id="followup-form">
           ${formFieldsHTML}
           <div class="parse-actions" style="margin-top: 1rem;">
-            <button type="submit" class="btn-parse-confirm" style="background: rgba(99,102,241,0.2); border-color: rgba(99,102,241,0.4); color: var(--primary-light);">Continuar →</button>
+            <button type="submit" class="btn-parse-continue">Continuar →</button>
             <button type="button" class="btn-parse-cancel" id="btn-cancel-followup">✗ Cancelar</button>
           </div>
         </form>
       </div>
       <p style="font-size:0.75rem;color:var(--text-muted);margin-top:0.5rem;">⚡ No se consume ningún token en esta etapa.</p>
+      ${secWarning}
     </div>
   `;
 
@@ -638,15 +686,16 @@ function showFreeQueryFollowup(parsed) {
   document.getElementById("followup-form").addEventListener("submit", (e) => {
     e.preventDefault();
     let targetVal = document.getElementById("followup-target")?.value.trim();
-
-    if (type.id === "funcional" && !parsed.subtype) {
-      const subtypeId = document.getElementById("followup-subtype").value;
-      const sub = type.subtypes.find(s => s.id === subtypeId);
-      pendingFreeQuery.subtype = sub;
+    
+    const selectEl = document.getElementById("followup-subtype");
+    if (selectEl) {
+      const subId = selectEl.value;
+      const subtypeObj = type.subtypes.find(s => s.id === subId);
+      pendingFreeQuery.subtype = subtypeObj;
     }
 
-    if (!targetVal) {
-      showToast("⚠️ Por favor especificá el gen, proteína o analito", "warning");
+    if (!targetVal && !type.fixed) {
+      showToast("⚠️ Por favor ingresá una especificación", "warning");
       return;
     }
 
@@ -661,7 +710,7 @@ function showFreeQueryFollowup(parsed) {
 
 function showConfirmationCardFromPending() {
   if (!pendingFreeQuery) return;
-  const { type, subtype, target } = pendingFreeQuery;
+  const { type, subtype, target, rawQuery } = pendingFreeQuery;
   const resultDiv = document.getElementById("free-query-result");
 
   const subtypeDisplay = subtype ? ` › ${subtype.label}` : "";
@@ -669,6 +718,10 @@ function showConfirmationCardFromPending() {
 
   const targets = splitTargets(type.id, target);
   const cost = targets.length;
+
+  const secWarning = (pendingFreeQuery.secondaryTypes && pendingFreeQuery.secondaryTypes.length > 0)
+    ? `<p style="font-size:0.75rem;color:#f59e0b;margin-top:0.5rem;font-weight:600;">⚠️ También detectamos una consulta para '${pendingFreeQuery.secondaryTypes[0].label}'. Podés solicitarla después de confirmar esta.</p>`
+    : "";
 
   resultDiv.innerHTML = `
     <div class="free-parse-card confirm">
@@ -687,21 +740,22 @@ function showConfirmationCardFromPending() {
         <button class="btn-parse-confirm" id="btn-confirm-query">✓ Confirmar y solicitar <span style="font-size:0.75rem;opacity:0.7">−${cost} token${cost > 1 ? 's' : ''}</span></button>
         <button class="btn-parse-cancel" id="btn-cancel-query">✗ Cancelar</button>
       </div>
+      ${secWarning}
     </div>`;
 
   document.getElementById("btn-confirm-query").addEventListener("click", () => confirmFreeQuery());
   document.getElementById("btn-cancel-query").addEventListener("click", () => cancelFreeQuery());
 }
 
-function confirmFreeQuery() {
+async function confirmFreeQuery() {
   if (!pendingFreeQuery) return;
-  const { type, subtype, target } = pendingFreeQuery;
+  const { type, subtype, target, rawQuery } = pendingFreeQuery;
   pendingFreeQuery = null;
 
   document.getElementById("free-query-result").innerHTML = "";
   document.getElementById("free-query-input").value = "";
 
-  submitStudyDirect(type, subtype, target);
+  await submitStudyDirect(type, subtype, target, rawQuery);
 }
 
 function cancelFreeQuery() {
@@ -808,11 +862,11 @@ function switchTab(id) {
 // SOLICITUD DESDE MODO GUIADO
 // ──────────────────────────────────────────────
 
-function submitStudyGuided(type) {
+async function submitStudyGuided(type) {
   if (!currentCase) { showToast("⚠️ Seleccioná un caso primero", "warning"); return; }
   session = syncSession();
   const caseId = currentCase.id;
-  const currentTokens = getStudentTokens(session, caseId);
+  const currentTokens = await getStudentTokens(session, caseId);
   if (currentTokens <= 0) { showToast("❌ Sin tokens disponibles", "error"); return; }
 
   let target, subtype = null;
@@ -829,7 +883,7 @@ function submitStudyGuided(type) {
     if (!target) { showToast("⚠️ Ingresá el target del estudio", "warning"); return; }
   }
 
-  submitStudyDirect(type, subtype, target);
+  await submitStudyDirect(type, subtype, target);
 
   if (!type.fixed) {
     const inp = document.getElementById(`target-${type.id}`);
@@ -854,7 +908,7 @@ function splitTargets(typeId, targetText) {
     .filter(p => p.length > 0);
 }
 
-function submitStudyDirect(type, subtype, target) {
+async function submitStudyDirect(type, subtype, target, rawQuery = "") {
   const targets = splitTargets(type.id, target);
   if (targets.length === 0) {
     showToast("⚠️ Target no válido", "warning");
@@ -863,7 +917,7 @@ function submitStudyDirect(type, subtype, target) {
   
   session = syncSession();
   const caseId = currentCase.id;
-  const currentTokens = getStudentTokens(session, caseId);
+  const currentTokens = await getStudentTokens(session, caseId);
   const cost = targets.length;
   
   if (currentTokens < cost) {
@@ -871,27 +925,31 @@ function submitStudyDirect(type, subtype, target) {
     return;
   }
   
-  showProcessing(type, subtype, targets.join(", "), () => {
+  showProcessing(type, subtype, targets.join(", "), async () => {
     let finalTokensLeft = currentTokens;
     let anyFound = false;
     
-    targets.forEach(tgt => {
+    for (const tgt of targets) {
       const result = findResult(currentCase, type.id, subtype?.id, tgt);
       const resultFound = result !== null;
       if (resultFound) anyFound = true;
       const resultText = result || buildNotFoundText(type, subtype, tgt);
       
-      const { tokensLeft } = consumeToken(
+      const response = await consumeToken(
         session.name, currentCase.id,
         type.label + (subtype ? ` › ${subtype.label}` : ""),
-        tgt, resultFound, resultText, type.id, subtype?.id
+        tgt, resultFound, resultText, type.id, subtype?.id,
+        rawQuery
       );
-      finalTokensLeft = tokensLeft;
       
-      addToHistory(type, subtype, tgt, resultText, resultFound, tokensLeft);
-    });
+      if (response && response.success) {
+        finalTokensLeft = response.tokensLeft;
+      }
+      
+      addToHistory(type, subtype, tgt, resultText, resultFound, finalTokensLeft);
+    }
     
-    updateTokenBadge();
+    await updateTokenBadge();
     
     if (anyFound) {
       renderCaseInfoBanner(currentCase);
@@ -909,6 +967,15 @@ function submitStudyDirect(type, subtype, target) {
  */
 function findResult(c, typeId, subtypeId, target) {
   const nTarget = normalize(target);
+
+  // Caso especial: autoinmunidad unificada
+  if (typeId === "autoanticuerpos") {
+    const autoKeys = Object.keys(c.results).filter(k => k.startsWith("autoanticuerpos::"));
+    if (autoKeys.length > 0) {
+      return autoKeys.map(k => c.results[k]).join("\n\n");
+    }
+    return null;
+  }
 
   // Claves candidatas en orden de preferencia
   const keyCandidates = subtypeId
@@ -961,11 +1028,19 @@ function addToHistory(type, subtype, target, result, found, tokensLeft) {
 function renderHistory() {
   const container = document.getElementById("history-list");
   const emptyMsg = document.getElementById("history-empty");
-  if (queryHistory.length === 0) { emptyMsg.style.display = "block"; return; }
+  
+  // Filtrar el historial por el caso actual
+  const caseHistory = queryHistory.filter(item => item.caseId === currentCase?.id);
+  
+  if (caseHistory.length === 0) {
+    container.innerHTML = "";
+    emptyMsg.style.display = "block";
+    return;
+  }
   emptyMsg.style.display = "none";
   container.innerHTML = "";
 
-  queryHistory.forEach((item, i) => {
+  caseHistory.forEach((item, i) => {
     const subtypeStr = item.subtype ? ` › ${item.subtype.label}` : "";
     const card = document.createElement("div");
     card.className = `result-card ${item.found ? "found" : "not-found"} ${i === 0 ? "new" : ""}`;

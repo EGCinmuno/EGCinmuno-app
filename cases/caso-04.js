@@ -37,7 +37,7 @@ window.EGC_CASES.push({
     // ELISA / Dosaje
     "elisa::IgG (Inmunoglobulina G)": "Dosaje — Inmunoglobulina G (IgG):\nIgG sérica = 356 mg/dL (VN: 500-1300 mg/dL).\n",
     "elisa::IgA (Inmunoglobulina A)": "Dosaje — Inmunoglobulina A (IgA):\nIgA sérica = 31 mg/dL (VN: 20-100 mg/dL).\n",
-    "elisa::IgM (Inmunoglobulina M)": "Dosaje — Inmunoglobulina M (IgM):\nIgM sérica = 455 mg/dL (VN: 40-150 mg/dL).\n",
+    "elisa::IgM (Inmunoglobulina M)": "Dosaje — Inmunoglobulina M (IgM):\nIgM sérica = 40 mg/dL (VN: 40-150 mg/dL).\n",
     "elisa::IgE (Inmunoglobulina E)": "Dosaje — Inmunoglobulina E (IgE):\nIgE sérica: No detectable\n",
 
     // Vacunas
@@ -65,6 +65,7 @@ window.EGC_CASES.push({
     "interconsulta::Gastrointestinal (Gastroenterologia)": "Gastroenterología: Paciente evaluado por antecedente de Salmonellosis con fallo multiorgánico. Coprocultivos de control negativos. Actualmente sin diarrea, buena tolerancia alimentaria y curva de crecimiento y peso normales.",
     "interconsulta::Dermatología": "Dermatología: Examen de piel normal, sin eccemas activos ni signos de dermatitis atópica severa.",
     "interconsulta::Neurología": "Neurología: Examen neurológico completo sin particularidades para la edad.",
+    "interconsulta::Neumonología": "Neumonología: Paciente con antecedentes de broncoespasmo obstructivo recurrente (BOR). Actualmente clínicamente estable, bajo tratamiento preventivo con corticoides inhalados y rescates intermitentes con salbutamol. Buena ventilación pulmonar sin sibilancias activas.",
     "interconsulta::Infectología": "Infectología: Paciente en seguimiento por hipogammaglobulinemia transitoria de la infancia vs. inmunodeficiencia humoral en estudio. Actualmente bajo tratamiento sustitutivo con gammaglobulina humana y profilaxis antibiótica con trimetoprima-sulfametoxazol (Bactrim) con excelente evolución y sin nuevos eventos infecciosos.",
 
     // Autoanticuerpos
@@ -75,6 +76,6 @@ window.EGC_CASES.push({
     "ecografia::completa": "Ecografía abdominal:\nEvidencia esplenomegalia leve persistente (bazo de 8.2 cm, límite superior para la edad), sin hepatomegalia.",
 
     // Tomografía
-    "tomografia::de tórax": "Tomografía computada de tórax de alta resolución (TCAR):\nEvidencia áreas de vidrio esmerilado, engrosamiento septal y pequeños nódulos subpleurales difusos. Hallazgos compatibles con compromiso pulmonar intersticial de tipo GLILD (Granulomatous-Lymphocytic Interstitial Lung Disease)."
+    "tomografia::de tórax": "Tomografía computada de tórax de alta resolución (TCAR):\nSin evidencia GLILD."
   }
 });

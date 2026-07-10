@@ -259,9 +259,10 @@ code, pre {
 }
 
 .login-brand p {
-  font-size: 0.9rem;
-  color: var(--text-muted);
+  font-size: 0.95rem;
+  color: var(--text-secondary);
   margin-top: 0.25rem;
+  font-weight: 500;
 }
 
 .login-form .form-group {
@@ -340,8 +341,8 @@ code, pre {
 .login-hint {
   margin-top: 1.5rem;
   text-align: center;
-  font-size: 0.8rem;
-  color: var(--text-muted);
+  font-size: 0.85rem;
+  color: var(--text-secondary);
 }
 
 .login-hint a {
@@ -544,11 +545,133 @@ code, pre {
   justify-content: center;
   gap: 1rem;
   color: var(--text-muted);
-  padding: 3rem;
+  padding: 2rem;
+  overflow-y: auto;
 }
 
 .no-case-msg .no-case-icon { font-size: 3rem; opacity: 0.4; }
 .no-case-msg p { font-size: 0.95rem; text-align: center; }
+
+/* ── Welcome Panel (Mesa de Entrada) ── */
+.welcome-container {
+  max-width: 800px;
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  padding: 1rem;
+  animation: fadeInUp 0.4s ease;
+}
+
+.welcome-header {
+  text-align: center;
+}
+
+.welcome-logo {
+  font-size: 3.5rem;
+  margin-bottom: 0.5rem;
+  display: inline-block;
+  filter: drop-shadow(0 0 16px rgba(99,102,241,0.4));
+}
+
+.welcome-header h2 {
+  font-size: 1.8rem;
+  background: linear-gradient(135deg, var(--primary-light), var(--accent-light));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 0.5rem;
+}
+
+.welcome-header p {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+}
+
+.welcome-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
+}
+
+.welcome-card-step {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  position: relative;
+  transition: all var(--transition);
+  text-align: center;
+}
+
+.welcome-card-step:hover {
+  border-color: rgba(99,102,241,0.3);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+  background: var(--bg-glass-hover);
+}
+
+.step-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: white;
+  font-weight: 700;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.welcome-card-step h3 {
+  font-size: 1rem;
+  color: var(--text-primary);
+}
+
+.welcome-card-step p {
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.welcome-footer-hint {
+  text-align: center;
+  background: rgba(99, 102, 241, 0.05);
+  border: 1px solid rgba(99, 102, 241, 0.15);
+  padding: 1rem;
+  border-radius: var(--radius-md);
+}
+
+.welcome-footer-hint p {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--primary-light);
+}
+
+:root[data-theme="light"] .welcome-card-step {
+  background: #ffffff;
+  border-color: rgba(0, 0, 0, 0.08);
+}
+:root[data-theme="light"] .welcome-card-step:hover {
+  background: #f8fafc;
+}
+:root[data-theme="light"] .welcome-footer-hint {
+  background: rgba(99, 102, 241, 0.03);
+}
+
+.admin-header a {
+  color: var(--text-secondary) !important;
+  transition: color var(--transition);
+}
+.admin-header a:hover {
+  color: var(--text-primary) !important;
+}
 
 /* Study panel */
 .study-panel {
@@ -1424,12 +1547,53 @@ code, pre {
   cursor: pointer; transition: all var(--transition);
 }
 .btn-parse-confirm:hover { background: rgba(16,185,129,0.3); }
+
+/* Botón continuar */
+.btn-parse-continue {
+  padding: 0.5rem 1.25rem; background: rgba(99,102,241,0.15); border: 1px solid rgba(99,102,241,0.3);
+  border-radius: var(--radius-md); color: var(--primary-light); font-family: inherit; font-size: 0.875rem; font-weight: 600;
+  cursor: pointer; transition: all var(--transition);
+}
+.btn-parse-continue:hover { background: rgba(99,102,241,0.25); }
+
 .btn-parse-cancel {
   padding: 0.5rem 1rem; background: transparent; border: 1px solid var(--border);
   border-radius: var(--radius-md); color: var(--text-muted); font-family: inherit; font-size: 0.875rem;
   cursor: pointer; transition: all var(--transition);
 }
 .btn-parse-cancel:hover { border-color: var(--danger); color: #f87171; }
+
+/* Sobreescritura tema claro */
+:root[data-theme="light"] .btn-parse-confirm {
+  background: #10b981;
+  border-color: #059669;
+  color: #ffffff !important;
+}
+:root[data-theme="light"] .btn-parse-confirm:hover {
+  background: #059669;
+}
+:root[data-theme="light"] .btn-parse-continue {
+  background: var(--primary);
+  border-color: var(--primary-light);
+  color: #ffffff !important;
+}
+:root[data-theme="light"] .btn-parse-continue:hover {
+  background: var(--primary-light);
+}
+:root[data-theme="light"] .parse-hint-tag {
+  background: rgba(0, 0, 0, 0.04);
+  color: var(--text-secondary);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+.parse-hint-tag.clickable-hint {
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.parse-hint-tag.clickable-hint:hover {
+  background: var(--primary-glow);
+  border-color: var(--primary-light);
+  color: var(--text-primary);
+}
 
 /* ── Separador guiado ── */
 .guided-separator {

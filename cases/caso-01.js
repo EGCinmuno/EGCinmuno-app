@@ -66,6 +66,7 @@ window.EGC_CASES.push({
     "interconsulta::Neurología": "Neurología: Examen neurológico completo normal. Sin alteraciones ni signos de organicidad.",
     "interconsulta::Gastrointestinal": "Gastrointestinal: Sin síntomas de malabsorción ni diarrea crónica. Examen físico abdominal normal.",
     "interconsulta::Cardiología": "Cardiología: Examen cardiovascular normal. Ruidos cardíacos netos, normofrecuentes, sin soplos.",
+    "interconsulta::Neumonología": "Neumonología: Evaluado por antecedentes de neumonías bacterianas recurrentes. Radiografía de tórax previa muestra resolución completa de focos consolidativos. Espirometría normal para la edad. Sin evidencia de patología pulmonar crónica activa al momento.",
 
     // Autoanticuerpos
     "autoanticuerpos::ANA": "Anticuerpos Antinucleares (ANA): Negativo (no reactivo). (No se observan títulos de autoanticuerpos circulantes).",

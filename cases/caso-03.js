@@ -46,10 +46,11 @@ window.EGC_CASES.push({
     "funcional::via-interferon::STAT1": "Vía del Interferón — STAT1:\nFosfo-STAT1 tras IFN-γ: 14% (↓↓, VN: > 50%)\nFosfo-STAT1 tras IFN-α: 11% (↓↓)\nCONCLUSIÓN: Señalización por interferón REDUCIDA. Defecto funcional en la vía JAK-STAT en contexto de WAS.",
 
     // Interconsultas
-    "interconsulta::Dermatología": "Dermatología: Se constata eccema atópico severo y generalizado, liquenificado, con lesiones de rascado y sobreinfección en flexuras. Prurito intenso.",
+    "interconsulta::Dermatología": "Dermatología: Eccema seco generalizado con liquenificación en pliegues flexores (codos, rodillas) y cara. Eritema y excoriaciones por rascado intenso.",
     "interconsulta::Neurología": "Neurología: Examen neurológico normal. Sin signos focales.",
     "interconsulta::Gastrointestinal": "Gastrointestinal: Episodios intermitentes de diarrea con estrías de sangre (proctocolitis). Frecuencia de deposiciones aumentada.",
     "interconsulta::Cardiología": "Cardiología: Ruidos cardíacos normales, normofrecuentes, sin soplos.",
+    "interconsulta::Neumonología": "Neumonología: Paciente evaluada por neumonía activa reportada en tomografía. Se constata buena mecánica respiratoria, saturación 97% al aire ambiente. Se sugiere continuar tratamiento antibiótico actual y control evolutivo.",
 
     // Autoanticuerpos
     "autoanticuerpos::ANA": "Anticuerpos Antinucleares (ANA): Negativo.",

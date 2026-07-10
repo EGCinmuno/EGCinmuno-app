@@ -3,7 +3,7 @@
  */
 
 const ADMIN_PASSWORD = "egcinmuno2026";
-const TOKENS_PER_STUDENT = 10;
+const TOKENS_PER_STUDENT = 15;
 
 // ──────────────────────────────────────────────
 // TIPOS DE ESTUDIO
@@ -54,8 +54,8 @@ const STUDY_TYPES = [
     color: "#8b5cf6",
     placeholder: "Ej: CD19 B cells, CD4 T cells, CD5 CD19...",
     description: "Análisis de subpoblaciones leucocitarias por marcadores de superficie",
-    keywords: ["citometria", "citometría", "citometrias", "flow", "facs", "cd4", "cd8", "cd19", "cd3", "subpoblacion", "subpoblación", "subpoblaciones", "marcador", "marcadores", "fenotipo", "fenotipos"],
-    indicators: ["citometria", "citometría", "citometrias", "flow", "facs", "subpoblacion", "subpoblación", "subpoblaciones", "marcador", "marcadores", "fenotipo", "fenotipos"]
+    keywords: ["citometria", "citometría", "citometrias", "flujo", "flow", "facs", "cd4", "cd8", "cd19", "cd3", "poblacion", "población", "poblaciones", "linfocitaria", "linfocitarias", "subpoblacion", "subpoblación", "subpoblaciones", "subpoblaciones linfocitarias", "marcador", "marcadores", "fenotipo", "fenotipos"],
+    indicators: ["citometria", "citometría", "citometrias", "flujo", "flow", "facs", "subpoblacion", "subpoblación", "subpoblaciones", "marcador", "marcadores", "fenotipo", "fenotipos"]
   },
   {
     id: "elisa",
@@ -81,9 +81,9 @@ const STUDY_TYPES = [
     label: "Interconsulta Médica",
     icon: "🧑‍⚕️💬",
     color: "#eeca8c",
-    placeholder: "Ej: Dermatología, Neurología, Gastroenterología, Cardiología...",
+    placeholder: "Ej: Dermatología, Neurología, Gastroenterología, Cardiología, Neumonología...",
     description: "Consulta médica o derivación a otras especialidades",
-    keywords: ["interconsulta", "interconsultas", "consulta", "consultas", "especialista", "especialistas", "derivacion", "derivación", "especialidad", "neurologia", "neurología", "neuro", "convulsion", "musculo", "músculo", "gastrointestinal", "gastroenterologia", "gastroenterología", "gastro", "intestin", "diarrea", "estomago", "estómago", "dermatologia", "dermatología", "dermato", "piel", "eccema", "dermatitis", "cardiologia", "cardiología", "cardio", "corazon", "corazón", "soplo", "neumonologia", "neumonología", "hematologia", "hematología", "infectologia", "infectología"],
+    keywords: ["interconsulta", "interconsultas", "consulta", "consultas", "especialista", "especialistas", "derivacion", "derivación", "especialidad", "medica", "médica", "medico", "médico", "medicos", "médicos", "neurologia", "neurología", "neuro", "convulsion", "musculo", "músculo", "gastrointestinal", "gastroenterologia", "gastroenterología", "gastro", "intestin", "diarrea", "estomago", "estómago", "dermatologia", "dermatología", "dermato", "piel", "eccema", "dermatitis", "cardiologia", "cardiología", "cardio", "corazon", "corazón", "soplo", "neumonologia", "neumonología", "neumonología", "neumo", "pulmon", "respirat", "hematologia", "hematología", "infectologia", "infectología", "infecto"],
     indicators: ["interconsulta", "interconsultas", "consulta", "consultas", "especialista", "especialistas", "derivacion", "derivación", "pedir", "solicitar", "evaluacion", "evaluación"]
   },
   {
@@ -91,8 +91,9 @@ const STUDY_TYPES = [
     label: "Anticuerpos de Autoinmunidad",
     icon: "🛡️",
     color: "#fb7185",
-    placeholder: "Ej: ANA, anti-DNA, ANCA, anti-Sm...",
     description: "Detección de anticuerpos asociados a patologías autoinmunes",
+    fixed: true,
+    fixedTarget: "completo",
     keywords: ["autoanticuerpo", "autoanticuerpos", "autoinmune", "autoinmunidad", "ana", "fan", "anti-dna", "antidna", "anca", "anti-sm", "antism", "anti-ro", "anti-la", "lupus", "artritis", "factor reumatoideo"],
     indicators: ["autoanticuerpo", "autoanticuerpos", "autoinmune", "autoinmunidad", "deteccion", "detección", "presencia"]
   },
@@ -294,23 +295,67 @@ function parseNaturalQuery(text) {
   let detectedType = null;
   let detectedSubtype = null;
   let typeScore = 0;
+  let target = "";
 
-  // Evitar colisión entre "segregación familiar" y "antecedentes familiares"
-  if (normalized.includes("segregac") || normalized.includes("genetic")) {
+  // 1. Intercepción Citometría BTK -> Mapear a Western Blot de BTK
+  if (normalized.includes("citometria") && normalized.includes("btk")) {
+    detectedType = STUDY_TYPES.find(t => t.id === "western-blot");
+    return {
+      type: detectedType,
+      subtype: null,
+      target: "BTK",
+      confidence: "high",
+      secondaryTypes: []
+    };
+  }
+
+  // 2. Intercepción Antecedentes Familiares (para evitar colisión por palabras como 'sintoma' o 'fallecido')
+  const isSegregacion = normalized.includes("segregac") || normalized.includes("genetic");
+  const isFamily = !isSegregacion && (
+    normalized.includes("herman") || normalized.includes("sibling") ||
+    normalized.includes("padre") || normalized.includes("madre") ||
+    normalized.includes("parental") || normalized.includes("consanguin") ||
+    normalized.includes("abuelo") || normalized.includes("abuela") ||
+    normalized.includes("tío") || normalized.includes("tía") ||
+    normalized.includes("tio") || normalized.includes("tia") ||
+    normalized.includes("familiar") || normalized.includes("familia") ||
+    normalized.includes("fallecido") || normalized.includes("fallecida") ||
+    normalized.includes("fallecieron") || normalized.includes("muerto") ||
+    normalized.includes("muerte") || normalized.includes("muertes") ||
+    normalized.includes("fallece")
+  );
+
+  if (isSegregacion) {
     detectedType = STUDY_TYPES.find(t => t.id === "segregacion");
+    typeScore = 100;
+  } else if (isFamily) {
+    detectedType = STUDY_TYPES.find(t => t.id === "antecedentes");
     typeScore = 100;
   }
 
+  // 3. Evaluar puntuaciones de coincidencia para todos los tipos (para soporte multi-query)
+  const matches = [];
   for (const type of STUDY_TYPES) {
+    // Si ya forzamos el tipo por segregación/familia, no pisar score
+    if ((isSegregacion && type.id !== "segregacion") || (isFamily && type.id !== "antecedentes")) {
+      continue;
+    }
+
     let score = 0;
     for (const kw of type.keywords) {
       if (normalized.includes(normalize(kw))) score++;
     }
+    
+    if (score > 0) {
+      matches.push({ type, score });
+    }
+
     if (score > typeScore) {
       typeScore = score;
       detectedType = type;
       detectedSubtype = null;
     }
+    
     if (type.hasSub && score > 0) {
       for (const sub of type.subtypes) {
         for (const kw of sub.keywords) {
@@ -324,17 +369,29 @@ function parseNaturalQuery(text) {
     }
   }
 
-  if (!detectedType) return { type: null, subtype: null, target: "", confidence: "none" };
+  if (!detectedType) {
+    return { type: null, subtype: null, target: "", confidence: "none", secondaryTypes: [] };
+  }
 
-  let target = "";
+  // Identificar tipos secundarios excluyendo el detectado como principal (para avisar al usuario)
+  const secondaryTypes = matches
+    .map(m => m.type)
+    .filter(t => t.id !== detectedType.id);
 
+  // 4. Mapeo específico de targets según el tipo de estudio
   if (detectedType.id === "info-paciente") {
-    // Para info-paciente, mapeamos directamente la intención basada en las palabras clave
     if (normalized.includes("inicio") || normalized.includes("sintoma") || normalized.includes("comienzo")) {
       target = "inicio de síntomas";
     } else if (normalized.includes("motivo") || normalized.includes("consulta")) {
       target = "motivo de consulta";
-    } else if (normalized.includes("infeccion")) {
+    } else if (
+      normalized.includes("infeccion") || normalized.includes("infecciones") ||
+      normalized.includes("bacteria") || normalized.includes("cultivo") ||
+      normalized.includes("germen") || normalized.includes("gérmenes") ||
+      normalized.includes("rescata") || normalized.includes("rescate") ||
+      normalized.includes("hospitaliz") || normalized.includes("internac") ||
+      normalized.includes("terapia")
+    ) {
       target = "infecciones";
     } else if (normalized.includes("edad") || normalized.includes("genero") || normalized.includes("sexo") || normalized.includes("años")) {
       target = "edad y género";
@@ -342,7 +399,6 @@ function parseNaturalQuery(text) {
       target = "general";
     }
   } else if (detectedType.id === "antecedentes") {
-    // Mapeo directo para antecedentes familiares
     if (normalized.includes("padre") || normalized.includes("madre") || normalized.includes("parental") || normalized.includes("consanguin")) {
       target = "parentales";
     } else if (normalized.includes("herman") || normalized.includes("sibling")) {
@@ -351,7 +407,6 @@ function parseNaturalQuery(text) {
       target = "abuelos/tíos";
     }
   } else if (detectedType.id === "interconsulta") {
-    // Mapeo directo para especialidades comunes de interconsulta
     if (normalized.includes("dermato") || normalized.includes("piel") || normalized.includes("eccema") || normalized.includes("dermatitis")) {
       target = "Dermatología";
     } else if (normalized.includes("neuro") || normalized.includes("convulsion") || normalized.includes("convulsión") || normalized.includes("sindrómico") || normalized.includes("sindromico") || normalized.includes("retraso motor") || normalized.includes("retraso desarrollo") || normalized.includes("retraso") || normalized.includes("musculo") || normalized.includes("músculo")) {
@@ -360,6 +415,10 @@ function parseNaturalQuery(text) {
       target = "Gastrointestinal";
     } else if (normalized.includes("cardio") || normalized.includes("corazon") || normalized.includes("corazón") || normalized.includes("soplo")) {
       target = "Cardiología";
+    } else if (normalized.includes("neumonol") || normalized.includes("neumono") || normalized.includes("neumo") || normalized.includes("pulmon") || normalized.includes("respirat")) {
+      target = "Neumonología";
+    } else if (normalized.includes("infecto")) {
+      target = "Infectología";
     } else {
       // Extraer target removiendo palabras de ruido para otros estudios
       const noiseWords = [
@@ -399,5 +458,5 @@ function parseNaturalQuery(text) {
 
   const confidence = typeScore >= 1 ? (target.length > 0 || detectedType.fixed ? "high" : "low") : "low";
 
-  return { type: detectedType, subtype: detectedSubtype, target, confidence };
+  return { type: detectedType, subtype: detectedSubtype, target, confidence, secondaryTypes };
 }

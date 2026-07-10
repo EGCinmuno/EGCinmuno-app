@@ -42,22 +42,35 @@ function requireAdmin() {
 // LOGIN DE ESTUDIANTE
 // ──────────────────────────────────────────────
 
-function loginStudent(input) {
+async function loginStudent(input) {
   initData();
-  const data = getData();
   const normalizedInput = normalize(input);
 
-  const found = data.students.find(s =>
-    normalize(s.name) === normalizedInput ||
-    normalize(s.email) === normalizedInput
-  );
+  try {
+    const { data: dbStudents, error } = await supabaseClient
+      .from('students')
+      .select('*');
 
-  if (!found) {
-    return { success: false, error: "Nombre o email no encontrado en la lista de participantes." };
+    if (error) {
+      console.error("Error al consultar estudiantes en Supabase:", error);
+      return { success: false, error: "Error de conexión con el servidor de base de datos." };
+    }
+
+    const found = dbStudents.find(s =>
+      normalize(s.name) === normalizedInput ||
+      (s.email && normalize(s.email) === normalizedInput)
+    );
+
+    if (!found) {
+      return { success: false, error: "Nombre o email no encontrado en la lista de participantes de Supabase." };
+    }
+
+    setSession(found);
+    return { success: true, student: found };
+  } catch (err) {
+    console.error("Excepción en loginStudent:", err);
+    return { success: false, error: "Excepción al conectar con la base de datos." };
   }
-
-  setSession(found);
-  return { success: true, student: found };
 }
 
 // ──────────────────────────────────────────────
@@ -83,77 +96,161 @@ function logoutAdmin() {
 /**
  * Obtiene los tokens restantes de un estudiante para un caso específico.
  */
-function getStudentTokens(student, caseId) {
+async function getStudentTokens(student, caseId) {
   if (!student) return 0;
-  if (!student.tokensPerCase) {
-    student.tokensPerCase = {};
+  const studentMail = student.email;
+
+  try {
+    const { data, error } = await supabaseClient
+      .from('student_tokens')
+      .select('tokens_left')
+      .eq('student_mail', studentMail)
+      .eq('case_id', caseId)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Error en getStudentTokens:", error);
+      return student.role === 'docente' ? 999 : TOKENS_PER_STUDENT;
+    }
+
+    if (data) {
+      return data.tokens_left;
+    }
+
+    // Si no existe el registro, lo creamos
+    const initialTokens = student.role === 'docente' ? 999 : TOKENS_PER_STUDENT;
+    const { error: insertError } = await supabaseClient
+      .from('student_tokens')
+      .insert({
+        student_mail: studentMail,
+        case_id: caseId,
+        tokens_left: initialTokens
+      });
+
+    if (insertError) {
+      console.error("Error al insertar tokens iniciales:", insertError);
+    }
+
+    return initialTokens;
+  } catch (err) {
+    console.error("Excepción en getStudentTokens:", err);
+    return student.role === 'docente' ? 999 : TOKENS_PER_STUDENT;
   }
-  if (student.tokensPerCase[caseId] === undefined) {
-    student.tokensPerCase[caseId] = TOKENS_PER_STUDENT;
-  }
-  return student.tokensPerCase[caseId];
 }
 
 /**
- * Consume un token del estudiante y actualiza localStorage + session.
- * Registra la consulta en el log del estudiante.
+ * Consume un token del estudiante y actualiza Supabase + session.
+ * Registra la consulta en el log de Supabase.
  * @returns {{ success: boolean, tokensLeft: number }}
  */
-function consumeToken(studentName, caseId, studyType, target, resultFound, resultText = "", typeId = "", subtypeId = "") {
-  const data = getData();
-  const idx = data.students.findIndex(s => normalize(s.name) === normalize(studentName));
+async function consumeToken(studentName, caseId, studyType, target, resultFound, resultText = "", typeId = "", subtypeId = "", rawQuery = "") {
+  const activeSession = getSession();
+  const studentMail = activeSession ? activeSession.email : "";
+  const isDocente = activeSession && activeSession.role === 'docente';
 
-  if (idx === -1) return { success: false, tokensLeft: 0 };
-  
-  const student = data.students[idx];
-  if (!student.tokensPerCase) {
-    student.tokensPerCase = {};
+  try {
+    const { data: tokenData, error: tokenError } = await supabaseClient
+      .from('student_tokens')
+      .select('tokens_left')
+      .eq('student_mail', studentMail)
+      .eq('case_id', caseId)
+      .maybeSingle();
+
+    if (tokenError) {
+      console.error("Error al obtener tokens para consumo:", tokenError);
+      return { success: false, tokensLeft: 0 };
+    }
+
+    let tokensLeft = tokenData ? tokenData.tokens_left : (isDocente ? 999 : TOKENS_PER_STUDENT);
+
+    // Si es estudiante, validamos que tenga tokens y decrementamos
+    if (!isDocente) {
+      if (tokensLeft <= 0) return { success: false, tokensLeft: 0 };
+      tokensLeft--;
+
+      const { error: updateError } = await supabaseClient
+        .from('student_tokens')
+        .update({ tokens_left: tokensLeft })
+        .eq('student_mail', studentMail)
+        .eq('case_id', caseId);
+
+      if (updateError) {
+        console.error("Error al descontar token:", updateError);
+        return { success: false, tokensLeft: tokensLeft + 1 };
+      }
+    }
+
+    // Insertar registro en logs de Supabase
+    const { error: logError } = await supabaseClient
+      .from('logs')
+      .insert({
+        student_mail: studentMail,
+        case_id: caseId,
+        study_type: studyType,
+        target: target,
+        result_found: resultFound,
+        result_text: resultText,
+        type_id: typeId,
+        subtype_id: subtypeId || null,
+        raw_query: rawQuery,
+        timestamp: new Date().toISOString()
+      });
+
+    if (logError) {
+      console.error("Error al insertar log en Supabase:", logError);
+    }
+
+    // Actualizar los tokens en la sesión local por retrocompatibilidad
+    if (activeSession) {
+      if (!activeSession.tokensPerCase) activeSession.tokensPerCase = {};
+      activeSession.tokensPerCase[caseId] = tokensLeft;
+      setSession(activeSession);
+    }
+
+    return { success: true, tokensLeft };
+  } catch (err) {
+    console.error("Excepción en consumeToken:", err);
+    return { success: false, tokensLeft: 0 };
   }
-  if (student.tokensPerCase[caseId] === undefined) {
-    student.tokensPerCase[caseId] = TOKENS_PER_STUDENT;
+}
+
+/**
+ * Registra una consulta que no pudo ser interpretada (sin costo de tokens) para auditoría del docente.
+ */
+async function logFailedQuery(caseId, rawQuery) {
+  const activeSession = getSession();
+  if (!activeSession) return;
+  const studentMail = activeSession.email;
+
+  try {
+    const { error } = await supabaseClient
+      .from('logs')
+      .insert({
+        student_mail: studentMail,
+        case_id: caseId,
+        study_type: "Consulta fallida (No interpretada)",
+        target: "",
+        result_found: false,
+        result_text: "",
+        type_id: "fallido",
+        subtype_id: null,
+        raw_query: rawQuery,
+        timestamp: new Date().toISOString()
+      });
+
+    if (error) {
+      console.error("Error al insertar log fallido en Supabase:", error);
+    }
+  } catch (err) {
+    console.error("Excepción en logFailedQuery:", err);
   }
-
-  if (student.tokensPerCase[caseId] <= 0) return { success: false, tokensLeft: 0 };
-
-  student.tokensPerCase[caseId]--;
-  
-  // Retrocompatibilidad con tokensLeft global
-  if (student.tokensLeft > 0) {
-    student.tokensLeft--;
-  }
-
-  student.log.push({
-    timestamp: new Date().toISOString(),
-    caseId,
-    studyType,
-    target,
-    resultFound,
-    resultText,
-    typeId,
-    subtypeId
-  });
-
-  saveData(data);
-
-  // Actualizar sesión con los nuevos tokens
-  setSession(student);
-
-  return { success: true, tokensLeft: student.tokensPerCase[caseId] };
 }
 
 /**
  * Sincroniza los datos del estudiante desde localStorage a la sesión.
  */
 function syncSession() {
-  const session = getSession();
-  if (!session) return null;
-  const data = getData();
-  const fresh = data.students.find(s => normalize(s.name) === normalize(session.name));
-  if (fresh) {
-    setSession(fresh);
-    return fresh;
-  }
-  return session;
+  return getSession();
 }
 
 // ──────────────────────────────────────────────

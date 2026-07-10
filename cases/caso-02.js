@@ -43,6 +43,7 @@ window.EGC_CASES.push({
     "interconsulta::Neurología": "Neurología: Examen neurológico sin particularidades.",
     "interconsulta::Gastrointestinal": "Gastrointestinal: Sin alteraciones en el ritmo evacuatorio, no se refiere dolor abdominal recurrente.",
     "interconsulta::Cardiología": "Cardiología: Soplo sistólico eyectivo funcional fisiológico. ECG dentro de límites normales.",
+    "interconsulta::Neumonología": "Neumonología: Sin síntomas respiratorios activos. Examen físico de tórax normal. Buena ventilación bilateral sin ruidos agregados ni signos de compromiso pulmonar en contexto de adenomegalias mediastínicas.",
 
     // Autoanticuerpos
     "autoanticuerpos::ANA": "ANA por IFI: Positivo (título 1:160, patrón moteado). Compatible con componente autoinmune secundario.",
