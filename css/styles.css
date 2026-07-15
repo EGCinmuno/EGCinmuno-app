@@ -355,9 +355,38 @@ code, pre {
 ────────────────────────────── */
 .exam-layout {
   display: grid;
-  grid-template-rows: auto 1fr;
+  grid-template-rows: auto 1fr auto;
   min-height: 100vh;
 }
+
+/* Logo Banner Footer */
+.logo-banner {
+  width: 100%;
+  padding: 1.25rem 2rem;
+  background: var(--bg-surface);
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 3rem;
+  flex-wrap: wrap;
+  z-index: 10;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+}
+
+.logo-banner img {
+  height: 38px;
+  max-width: 130px;
+  object-fit: contain;
+  opacity: 0.8;
+  transition: opacity var(--transition), transform var(--transition);
+}
+
+.logo-banner img:hover {
+  opacity: 1;
+  transform: scale(1.05);
+}
+
 
 /* Header */
 .exam-header {

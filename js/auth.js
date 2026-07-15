@@ -35,6 +35,8 @@ function requireAuth() {
 
 let cachedTokensLimit = 15;
 let cachedQueryMode = "both";
+let cachedShowBanner = true;
+let cachedBannerLogos = ["egc.png", "lasid.png", "Logo_exactas.svg"];
 
 async function fetchSystemSettings() {
   try {
@@ -44,8 +46,21 @@ async function fetchSystemSettings() {
     if (!error && data) {
       const tokensRow = data.find(r => r.key === 'tokens_per_student');
       const modeRow = data.find(r => r.key === 'query_mode');
+      const showBannerRow = data.find(r => r.key === 'show_banner');
+      const bannerLogosRow = data.find(r => r.key === 'banner_logos');
+
       if (tokensRow) cachedTokensLimit = parseInt(tokensRow.value, 10) || 15;
       if (modeRow) cachedQueryMode = modeRow.value || "both";
+      if (showBannerRow) cachedShowBanner = showBannerRow.value !== "false";
+      if (bannerLogosRow) {
+        try {
+          cachedBannerLogos = JSON.parse(bannerLogosRow.value);
+        } catch (e) {
+          cachedBannerLogos = ["egc.png", "lasid.png", "Logo_exactas.svg"];
+        }
+      } else {
+        cachedBannerLogos = ["egc.png", "lasid.png", "Logo_exactas.svg"];
+      }
     }
   } catch (err) {
     console.error("Error al cargar configuraciones de Supabase:", err);
@@ -280,7 +295,7 @@ function syncSession() {
 // GESTIÓN DE TEMA (CLARO/OSCURO)
 // ──────────────────────────────────────────────
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   const toggleBtn = document.getElementById("theme-toggle-btn");
   if (toggleBtn) {
     toggleBtn.addEventListener("click", () => {
@@ -290,4 +305,43 @@ document.addEventListener("DOMContentLoaded", () => {
       localStorage.setItem("theme", newTheme);
     });
   }
+
+  // Renderizar el banner de logos si corresponde en el examen
+  const isExamPage = document.querySelector(".exam-layout");
+  if (isExamPage) {
+    await renderFooterBanner();
+  }
 });
+
+async function renderFooterBanner() {
+  await fetchSystemSettings();
+
+  let banner = document.getElementById("logo-banner-footer");
+  if (!banner) {
+    banner = document.createElement("footer");
+    banner.id = "logo-banner-footer";
+    banner.className = "logo-banner";
+
+    const examLayout = document.querySelector(".exam-layout");
+    const loginPage = document.querySelector(".login-page");
+
+    if (examLayout) {
+      examLayout.appendChild(banner);
+    } else if (loginPage) {
+      loginPage.appendChild(banner);
+    } else {
+      document.body.appendChild(banner);
+    }
+  }
+
+  if (!cachedShowBanner || !cachedBannerLogos || cachedBannerLogos.length === 0) {
+    banner.style.display = "none";
+    return;
+  }
+
+  banner.style.display = "flex";
+  banner.innerHTML = cachedBannerLogos.map(logo => {
+    return `<img src="images/${logo}" alt="${logo}" />`;
+  }).join('');
+}
+

@@ -11,7 +11,7 @@ async function refreshAdminData() {
       .from('cases')
       .select('*')
       .order('id', { ascending: true });
-    
+
     if (csErr) {
       console.error("Error al obtener casos de Supabase:", csErr);
     } else if (csData) {
@@ -24,7 +24,7 @@ async function refreshAdminData() {
         results: c.results || {},
         internal_notes: c.internal_notes || ""
       }));
-      
+
       // Auto-seleccionar primer caso si es null
       if (!selectedCaseId && dbCases.length > 0) {
         selectedCaseId = dbCases[0].id;
@@ -34,7 +34,7 @@ async function refreshAdminData() {
     const { data: stData, error: stErr } = await supabaseClient
       .from('students')
       .select('*');
-    
+
     if (stErr) {
       console.error("Error al obtener estudiantes de Supabase:", stErr);
       showAdminToast("Error de permisos RLS o conexión al leer estudiantes", "error");
@@ -160,11 +160,11 @@ async function switchAdminTab(tab) {
   document.querySelectorAll(".admin-nav-btn").forEach(b => b.classList.toggle("active", b.dataset.tab === tab));
   const content = document.getElementById("admin-content");
   content.innerHTML = "";
-  
+
   if (tab === "students" || tab === "log") {
     await refreshAdminData();
   }
-  
+
   if (tab === "students") renderStudentsTab(content);
   else if (tab === "cases") renderCasesTab(content);
   else if (tab === "settings") renderSettingsTab(content);
@@ -492,11 +492,11 @@ function renderCasesTab(container) {
           </h3>
           <div style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 480px; overflow-y: auto; padding-right: 0.25rem;">
             ${dbCases.length === 0
-              ? `<p class="empty-msg" style="font-size:0.78rem; text-align:center;">No hay casos. Clic en "+ Nuevo Caso" para crear uno.</p>`
-              : dbCases.map(c => {
-                  const isSelected = c.id === selectedCaseId;
-                  const isPub = c.status === "published";
-                  return `
+      ? `<p class="empty-msg" style="font-size:0.78rem; text-align:center;">No hay casos. Clic en "+ Nuevo Caso" para crear uno.</p>`
+      : dbCases.map(c => {
+        const isSelected = c.id === selectedCaseId;
+        const isPub = c.status === "published";
+        return `
                     <div onclick="selectAdminCase('${c.id}')" style="padding: 0.65rem 0.75rem; border-radius: var(--radius-md); border: 1px solid ${isSelected ? 'var(--primary)' : 'var(--border)'}; background: ${isSelected ? 'var(--primary-glow)' : 'transparent'}; cursor: pointer; transition: all var(--transition); display:flex; flex-direction:column; gap:0.2rem;">
                       <div style="display:flex; justify-content:space-between; align-items:center; gap: 0.25rem;">
                         <span style="font-weight:600; font-size:0.82rem; color:${isSelected ? 'var(--primary-light)' : 'var(--text-primary)'}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
@@ -507,7 +507,7 @@ function renderCasesTab(container) {
                         </span>
                       </div>
                     </div>`;
-                }).join("")}
+      }).join("")}
           </div>
           <button class="btn-admin-secondary" onclick="syncLocalCasesToSupabase()" style="margin-top:0.5rem; font-size:0.78rem; width:100%; padding: 0.4rem 0.5rem;">
             🔄 Importar Locales
@@ -635,10 +635,10 @@ function renderSelectedCaseDetail() {
 
       <div class="results-sections-wrapper" style="max-height:420px; overflow-y:auto; padding-right:0.25rem; display:flex; flex-direction:column; gap:1.25rem;">
         ${totalItems === 0
-          ? `<p class="empty-msg" style="padding:2rem 0; text-align:center; font-style:italic; font-size:0.85rem; color:var(--text-muted);">No hay estudios cargados para este caso.</p>`
-          : Object.entries(categories).map(([catKey, cat]) => {
-              if (cat.items.length === 0) return "";
-              return `
+      ? `<p class="empty-msg" style="padding:2rem 0; text-align:center; font-style:italic; font-size:0.85rem; color:var(--text-muted);">No hay estudios cargados para este caso.</p>`
+      : Object.entries(categories).map(([catKey, cat]) => {
+        if (cat.items.length === 0) return "";
+        return `
                 <div class="category-block" style="display:flex; flex-direction:column; gap:0.5rem;">
                   <h4 style="font-size:0.75rem; font-weight:700; color:var(--primary-light); text-transform:uppercase; letter-spacing:0.06em; margin:0 0 0.25rem 0;">
                     ${cat.label}
@@ -666,7 +666,7 @@ function renderSelectedCaseDetail() {
                   </div>
                 </div>
               `;
-            }).join("")}
+      }).join("")}
       </div>
     </div>
   `;
@@ -711,7 +711,7 @@ async function toggleCaseStatus(caseId) {
   const c = dbCases.find(x => x.id === caseId);
   if (!c) return;
   const newStatus = c.status === "published" ? "draft" : "published";
-  
+
   try {
     const { error } = await supabaseClient
       .from('cases')
@@ -719,7 +719,7 @@ async function toggleCaseStatus(caseId) {
       .eq('id', caseId);
 
     if (error) throw error;
-    
+
     await refreshAdminData();
     const content = document.getElementById("admin-content");
     renderCasesTab(content);
@@ -898,12 +898,12 @@ async function savePatientData(e) {
   try {
     const { error } = await supabaseClient
       .from('cases')
-      .update({ 
-        name, 
-        description, 
-        internal_notes, 
-        patient, 
-        results 
+      .update({
+        name,
+        description,
+        internal_notes,
+        patient,
+        results
       })
       .eq('id', caseId);
 
@@ -951,10 +951,10 @@ async function addCase(e) {
   const age = document.getElementById("case-age").value.trim() || "—";
   const gender = document.getElementById("case-gender").value;
   const onset = document.getElementById("case-onset").value.trim() || "—";
-  
+
   const id = "caso-" + Date.now();
   const infoText = `INFORMACIÓN DEL PACIENTE:\n• Edad: ${age}\n• Género: ${gender}\n• Inicio de síntomas: ${onset}`;
-  
+
   try {
     const { error } = await supabaseClient
       .from('cases')
@@ -988,7 +988,7 @@ async function saveResult(e) {
   const typeId = document.getElementById("result-study-type").value;
   const type = STUDY_TYPES.find(t => t.id === typeId);
   const text = document.getElementById("result-text").value.trim();
-  
+
   const c = dbCases.find(x => x.id === caseId);
   if (!c) return;
 
@@ -1076,6 +1076,8 @@ async function deleteCase(caseId) {
 function renderSettingsTab(container) {
   const mode = cachedQueryMode || "both";
   const tokenLimit = cachedTokensLimit || 15;
+  const showBanner = cachedShowBanner !== false;
+  const bannerLogos = cachedBannerLogos || [];
 
   container.innerHTML = `
     <div class="admin-section">
@@ -1124,6 +1126,37 @@ function renderSettingsTab(container) {
         </p>
       </div>
 
+      <div class="settings-card" style="background:var(--bg-card); border:1px solid var(--border); padding:1.5rem; border-radius:var(--radius-lg); margin-bottom:1.5rem;">
+        <h3>🖼️ Banner de Logos (Pie de Página)</h3>
+        <p style="margin-bottom:1.25rem; font-size:0.875rem; color:var(--text-secondary);">Configurá el banner que se muestra al final de la pantalla de estudiantes.</p>
+        <div style="margin-bottom:1.25rem;">
+          <label style="display:inline-flex; align-items:center; gap:0.5rem; cursor:pointer; color:var(--text-primary); font-weight:500;">
+            <input type="checkbox" id="settings-show-banner" ${showBanner ? 'checked' : ''} onchange="toggleBannerVisibility(this.checked)" style="width:18px; height:18px;">
+            Mostrar banner de logos
+          </label>
+        </div>
+        <div id="banner-logos-selection" style="display:${showBanner ? 'block' : 'none'}; border-top:1px solid var(--border); padding-top:1rem;">
+          <p style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:0.75rem;">Seleccioná los logos a mostrar:</p>
+          <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:0.75rem;">
+            ${[
+      { file: 'egc.png', label: 'EGC' },
+      { file: 'lasid.png', label: 'LASID' },
+      { file: 'exactas.png', label: 'Exactas (UBA)' },
+      { file: 'logo egcinmuno.png', label: 'EGCinmuno' },
+      { file: 'logo_square.png', label: 'Favicon Cuadrado' }
+    ].map(logo => {
+      const isChecked = bannerLogos.includes(logo.file);
+      return `
+                <label style="display:flex; align-items:center; gap:0.5rem; padding:0.5rem; border:1px solid var(--border); border-radius:var(--radius-md); background:rgba(255,255,255,0.02); cursor:pointer;">
+                  <input type="checkbox" name="banner-logo" value="${logo.file}" ${isChecked ? 'checked' : ''} onchange="updateSelectedLogos()" style="width:16px; height:16px;">
+                  <span style="font-size:0.85rem; color:var(--text-primary);">${logo.label}</span>
+                </label>
+              `;
+    }).join('')}
+          </div>
+        </div>
+      </div>
+
       <div class="settings-card danger-card" style="background:var(--bg-card); border:1px solid var(--border); padding:1.5rem; border-radius:var(--radius-lg);">
         <h3>⚠️ Reiniciar datos</h3>
         <p style="margin-bottom:1rem; font-size:0.875rem; color:var(--text-secondary);">Borra todo de la base de datos local y restaura los datos de ejemplo.</p>
@@ -1157,6 +1190,22 @@ async function updateTokensSetting() {
     return;
   }
   await saveSystemSetting('tokens_per_student', val.toString());
+}
+
+async function toggleBannerVisibility(visible) {
+  cachedShowBanner = visible;
+  const selectionDiv = document.getElementById("banner-logos-selection");
+  if (selectionDiv) {
+    selectionDiv.style.display = visible ? "block" : "none";
+  }
+  await saveSystemSetting('show_banner', visible ? 'true' : 'false');
+}
+
+async function updateSelectedLogos() {
+  const checkboxes = document.querySelectorAll('input[name="banner-logo"]:checked');
+  const selected = Array.from(checkboxes).map(cb => cb.value);
+  cachedBannerLogos = selected;
+  await saveSystemSetting('banner_logos', JSON.stringify(selected));
 }
 
 function confirmResetData() {
