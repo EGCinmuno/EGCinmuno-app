@@ -1036,7 +1036,7 @@ function findResult(c, typeId, subtypeId, target) {
 
   // Caso especial: autoinmunidad unificada
   if (typeId === "autoanticuerpos") {
-    const autoKeys = Object.keys(c.results).filter(k => k.startsWith("autoanticuerpos::"));
+    const autoKeys = Object.keys(c.results).filter(k => k.startsWith("autoanticuerpos::") && c.results[k] && c.results[k].trim());
     if (autoKeys.length > 0) {
       return autoKeys.map(k => c.results[k]).join("\n\n");
     }
@@ -1049,11 +1049,14 @@ function findResult(c, typeId, subtypeId, target) {
     : [`${typeId}::${target}`];
 
   for (const key of keyCandidates) {
-    if (c.results[key]) return c.results[key];
+    if (c.results[key] && typeof c.results[key] === "string" && c.results[key].trim().length > 0) {
+      return c.results[key];
+    }
   }
 
   // Búsqueda normalizada sobre todas las claves del caso
   for (const [key, value] of Object.entries(c.results)) {
+    if (!value || typeof value !== "string" || value.trim().length === 0) continue;
     const parts = key.split("::");
     const kt = parts[0];
     if (kt !== typeId) continue;

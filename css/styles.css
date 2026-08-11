@@ -1980,4 +1980,57 @@ code, pre {
   text-overflow: ellipsis;
 }
 
+/* ──────────────────────────────────────────────
+ * CATEGORÍAS PRECARGADAS VACÍAS & SLOTS EN ADMIN
+ * ────────────────────────────────────────────── */
 
+.result-admin-item.empty-slot {
+  border: 1px dashed var(--border);
+  background: rgba(255, 255, 255, 0.008);
+  opacity: 0.88;
+  transition: all var(--transition);
+}
+
+.result-admin-item.empty-slot:hover {
+  border-color: var(--primary);
+  background: rgba(139, 92, 246, 0.04);
+  opacity: 1;
+}
+
+.empty-slot-badge {
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 0.12rem 0.4rem;
+  border-radius: 4px;
+  background: rgba(148, 163, 184, 0.12);
+  color: var(--text-muted);
+}
+
+.btn-quick-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.28rem 0.65rem;
+  border-radius: var(--radius-md);
+  background: var(--primary-glow);
+  color: var(--primary-light);
+  border: 1px solid var(--primary);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.btn-quick-add:hover {
+  background: var(--primary);
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+}
+
+.category-block-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.4rem;
+}

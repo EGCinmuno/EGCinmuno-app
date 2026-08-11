@@ -523,6 +523,7 @@ function renderCasesTab(container) {
     ${buildCaseModal()}
     ${buildResultModal()}
     ${buildPatientModal()}
+    ${buildPreloadModal()}
   `;
   renderSelectedCaseDetail();
   bindModalCloses();
@@ -533,6 +534,73 @@ function selectAdminCase(id) {
   const content = document.getElementById("admin-content");
   renderCasesTab(content);
 }
+
+// ──────────────────────────────────────────────
+// PLANTILLAS Y CATEGORÍAS PRECARGADAS (ESTRUCTURA CASO 1)
+// ──────────────────────────────────────────────
+
+const STANDARD_CASO1_TEMPLATES = [
+  // 👨‍👩‍👧‍👦 Datos Clínicos y Antecedentes
+  { key: "info-paciente::infecciones", group: "patient", typeId: "info-paciente", label: "Información del Paciente › infecciones", defaultVal: "Infecciones: Infecciones bacterianas recurrentes (neumonías, otitis media, sinusitis) desde los 6 meses de vida. Cuadros severos que requirieron múltiples hospitalizaciones." },
+  { key: "info-paciente::edad y género", group: "patient", typeId: "info-paciente", label: "Información del Paciente › edad y género", defaultVal: "Edad: [Ej: 8 años]. Género: [Ej: Masculino]." },
+  { key: "info-paciente::motivo de consulta", group: "patient", typeId: "info-paciente", label: "Información del Paciente › motivo de consulta", defaultVal: "Motivo de consulta: Infecciones bacterianas recurrentes." },
+  { key: "info-paciente::inicio de síntomas", group: "patient", typeId: "info-paciente", label: "Información del Paciente › inicio de síntomas", defaultVal: "Inicio de síntomas: 6 meses de vida." },
+  { key: "antecedentes::hermanos", group: "patient", typeId: "antecedentes", label: "Antecedentes Familiares › hermanos", defaultVal: "ANTECEDENTES — HERMANOS/HERMANAS: Paciente es primogénito. Sin hermanos conocidos a la fecha." },
+  { key: "antecedentes::parentales", group: "patient", typeId: "antecedentes", label: "Antecedentes Familiares › parentales", defaultVal: "ANTECEDENTES — PADRES: • Padre: sano. • Madre: sana. No consanguíneos." },
+  { key: "antecedentes::abuelos/tíos", group: "patient", typeId: "antecedentes", label: "Antecedentes Familiares › abuelos/tíos", defaultVal: "Antecedentes abuelos/tíos: Un tío materno falleció a corta edad por neumonía a repetición sin diagnóstico etiológico." },
+
+  // 🔬 Estudios de Laboratorio y Genética
+  { key: "western-blot::AKT", group: "lab", typeId: "western-blot", label: "Western Blot › AKT", defaultVal: "Western Blot para AKT: Banda presente a ~60 kDa. Intensidad normal respecto al control." },
+  { key: "western-blot::BTK", group: "lab", typeId: "western-blot", label: "Western Blot › BTK", defaultVal: "Western Blot para BTK: Ausencia completa de expresión de BTK (~76 kDa)." },
+  { key: "hemograma::completo", group: "lab", typeId: "hemograma", label: "Hemograma › completo", defaultVal: "Hemograma completo:\n• Leucocitos: 4.200/μL (↓ leve)\n• Linfocitos: 850/μL (↓↓ marcado, VN: 1500–4000)\n• Neutrófilos: 3.100/μL (normal)\n• Hemoglobina: 12.8 g/dL (normal)\n• Plaquetas: 230.000/μL (normal)" },
+  { key: "citometria::LB memoria", group: "lab", typeId: "citometria", label: "Citometría de Flujo › LB memoria", defaultVal: "Citometría — Linfocitos B de Memoria (CD19+CD27+): CD19+CD27+ = 0.0% (VN: 1.5–10%)" },
+  { key: "citometria::CD3 T cells", group: "lab", typeId: "citometria", label: "Citometría de Flujo › CD3 T cells", defaultVal: "Citometría — Linfocitos T (CD3+): CD3+ = 72% (VN: 60–85%)" },
+  { key: "citometria::CD4 T cells", group: "lab", typeId: "citometria", label: "Citometría de Flujo › CD4 T cells", defaultVal: "Citometría — Linfocitos T CD4+: CD4+ = 28% (VN: 25–45%)" },
+  { key: "citometria::CD8 T cells", group: "lab", typeId: "citometria", label: "Citometría de Flujo › CD8 T cells", defaultVal: "Citometría — Linfocitos T CD8+: CD8+ = 31% (VN: 20–35%)" },
+  { key: "citometria::CD19 B cells", group: "lab", typeId: "citometria", label: "Citometría de Flujo › CD19 B cells", defaultVal: "Citometría — Linfocitos B (CD19+): CD19+ = 0.1% (VN: 6–25%)" },
+  { key: "citometria::CD20 B cells", group: "lab", typeId: "citometria", label: "Citometría de Flujo › CD20 B cells", defaultVal: "Citometría — Linfocitos B (CD20+): CD20+ = 0.1% (VN: 6–25%)" },
+  { key: "elisa::IgA", group: "lab", typeId: "elisa", label: "ELISA / Dosaje › IgA", defaultVal: "Dosaje — Inmunoglobulina A (IgA): IgA sérica = 5 mg/dL (VN: 70–400 mg/dL)" },
+  { key: "elisa::IgG", group: "lab", typeId: "elisa", label: "ELISA / Dosaje › IgG", defaultVal: "Dosaje — Inmunoglobulina G (IgG): IgG sérica = 142 mg/dL (VN: 700–1600 mg/dL)" },
+  { key: "elisa::IgM", group: "lab", typeId: "elisa", label: "ELISA / Dosaje › IgM", defaultVal: "Dosaje — Inmunoglobulina M (IgM): IgM sérica = 18 mg/dL (VN: 40–230 mg/dL)" },
+  { key: "pcr::BTK mRNA", group: "lab", typeId: "pcr", label: "Sanger / PCR › BTK mRNA", defaultVal: "RT-PCR para BTK mRNA: No se detecta producto de amplificación." },
+  { key: "autoanticuerpos::ANA", group: "lab", typeId: "autoanticuerpos", label: "Autoanticuerpos › ANA", defaultVal: "Anticuerpos Antinucleares (ANA): Negativo (no reactivo)." },
+  { key: "autoanticuerpos::anti-DNA", group: "lab", typeId: "autoanticuerpos", label: "Autoanticuerpos › anti-DNA", defaultVal: "Anticuerpos anti-DNA de doble cadena: Negativo." },
+  { key: "vacuna::Tétanos", group: "lab", typeId: "vacuna", label: "Respuesta a Vacunas › Tétanos", defaultVal: "Respuesta a vacuna — Tétanos: Título pre: < 0.01 UI/mL · Título post: 0.02 UI/mL (VN: ≥ 0.1 UI/mL)" },
+  { key: "vacuna::Neumococo", group: "lab", typeId: "vacuna", label: "Respuesta a Vacunas › Neumococo", defaultVal: "Respuesta a vacuna — Neumococo 23v: Títulos anti-polisacáridos indetectables." },
+  { key: "vacuna::Hepatitis B", group: "lab", typeId: "vacuna", label: "Respuesta a Vacunas › Hepatitis B", defaultVal: "Respuesta a vacuna — Hepatitis B: Anti-HBs post: < 10 mUI/mL (VN: ≥ 10 mUI/mL)" },
+  { key: "segregacion::BTK", group: "lab", typeId: "segregacion", label: "Segregación Familiar › BTK", defaultVal: "SEGREGACIÓN FAMILIAR — Gen BTK (Xq21.3) · Herencia ligada al X:\n• Probando: AFECTADO\n• Madre: PORTADORA\n• Padre: No portador" },
+  { key: "funcional::citotoxicidad::NK", group: "lab", typeId: "funcional", label: "Ensayo Funcional › Citotoxicidad NK", defaultVal: "Citotoxicidad NK: Actividad lítica: 38% (VN: 20–50%)" },
+  { key: "funcional::proliferacion::PHA", group: "lab", typeId: "funcional", label: "Ensayo Funcional › Proliferación PHA", defaultVal: "Proliferación Celular — PHA: Índice de estimulación (IE): 1.2 (VN: IE > 10)" },
+  { key: "funcional::via-interferon::STAT1", group: "lab", typeId: "funcional", label: "Ensayo Funcional › Vía Interferón STAT1", defaultVal: "Vía del Interferón — STAT1: FosfopSTAT1 tras IFN-γ: 62% (normal)" },
+  { key: "funcional::proliferacion::anti-CD3", group: "lab", typeId: "funcional", label: "Ensayo Funcional › Proliferación anti-CD3", defaultVal: "Proliferación — anti-CD3: IE: 18.4 (normal, VN: > 10)" },
+
+  // 🩻 Imágenes e Interconsultas Médicas
+  { key: "interconsulta::Neurología", group: "consult", typeId: "interconsulta", label: "Interconsulta › Neurología", defaultVal: "Neurología: Examen neurológico completo normal." },
+  { key: "interconsulta::Cardiología", group: "consult", typeId: "interconsulta", label: "Interconsulta › Cardiología", defaultVal: "Cardiología: Examen cardiovascular normal, sin soplos." },
+  { key: "interconsulta::Dermatología", group: "consult", typeId: "interconsulta", label: "Interconsulta › Dermatología", defaultVal: "Dermatología: Eccema leve transitorio en brazos." },
+  { key: "interconsulta::Neumonología", group: "consult", typeId: "interconsulta", label: "Interconsulta › Neumonología", defaultVal: "Neumonología: Evaluado por antecedentes de neumonías. Espirometría normal." },
+  { key: "interconsulta::Gastrointestinal", group: "consult", typeId: "interconsulta", label: "Interconsulta › Gastrointestinal", defaultVal: "Gastrointestinal: Sin síntomas de malabsorción ni diarrea crónica." },
+  { key: "ecografia::completa", group: "consult", typeId: "ecografia", label: "Ecografía Abdominal", defaultVal: "Ecografía Abdominal: Órganos abdominales normales, sin esplenomegalia." },
+  { key: "tomografia::de tórax", group: "consult", typeId: "tomografia", label: "Tomografía Computada", defaultVal: "Tomografía computada de tórax: Sin hallazgos patológicos relevantes." }
+];
+
+const CATEGORY_GROUPS = [
+  {
+    id: "patient",
+    label: "👨‍👩‍👧‍👦 Datos Clínicos y Antecedentes",
+    typeIds: ["info-paciente", "antecedentes"]
+  },
+  {
+    id: "lab",
+    label: "🔬 Estudios de Laboratorio y Genética",
+    typeIds: ["hemograma", "citometria", "elisa", "western-blot", "pcr", "funcional", "autoanticuerpos", "vacuna", "segregacion"]
+  },
+  {
+    id: "consult",
+    label: "🩻 Imágenes e Interconsultas Médicas",
+    typeIds: ["ecografia", "tomografia", "interconsulta"]
+  }
+];
 
 function renderSelectedCaseDetail() {
   const container = document.getElementById("cases-editor-pane");
@@ -554,42 +622,28 @@ function renderSelectedCaseDetail() {
     ? `🧑‍⚕️ <strong>Edad:</strong> ${c.patient.age || '—'} &nbsp;&nbsp;|&nbsp;&nbsp; <strong>Género:</strong> ${c.patient.gender || '—'} &nbsp;&nbsp;|&nbsp;&nbsp; <strong>Inicio de síntomas:</strong> ${c.patient.symptomOnset || '—'}`
     : "Sin datos demográficos.";
 
-  // Organizar los resultados por categorías
-  const categories = {
-    patient: { label: "👨‍👩‍👧‍👦 Datos Clínicos y Antecedentes", items: [] },
-    lab: { label: "🔬 Estudios de Laboratorio y Genética", items: [] },
-    consult: { label: "🧑‍⚕️💬 Interconsultas y Evaluaciones", items: [] }
-  };
-
+  // Organizar los resultados existentes por tipo
+  const resultsByTypeId = {};
   Object.entries(c.results).forEach(([key, val]) => {
-    // Ocultar la ficha de información general porque ya se edita en la tarjeta superior
-    if (key === "info-paciente::general") return;
-
+    if (key === "info-paciente::general") return; // Ya en tarjeta superior
     const parts = key.split("::");
     const typeId = parts[0];
+    if (!resultsByTypeId[typeId]) resultsByTypeId[typeId] = [];
+
     const typeObj = STUDY_TYPES.find(t => t.id === typeId);
     const displayKey = parts.length === 3
       ? `${parts[1]} › ${parts[2]}`
       : parts.slice(1).join(" › ");
 
-    const item = {
+    resultsByTypeId[typeId].push({
       key,
       val,
       typeId,
       typeObj,
-      displayKey
-    };
-
-    if (typeId === "antecedentes" || typeId === "info-paciente") {
-      categories.patient.items.push(item);
-    } else if (typeId === "interconsulta") {
-      categories.consult.items.push(item);
-    } else {
-      categories.lab.items.push(item);
-    }
+      displayKey,
+      hasContent: Boolean(val && val.trim().length > 0)
+    });
   });
-
-  const totalItems = categories.patient.items.length + categories.lab.items.length + categories.consult.items.length;
 
   container.innerHTML = `
     <!-- Case Header -->
@@ -626,34 +680,42 @@ function renderSelectedCaseDetail() {
 
     <!-- Study Results Grid -->
     <div>
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; flex-wrap:wrap; gap:0.5rem;">
         <h3 style="font-size:0.95rem; font-weight:700; color:var(--text-primary); margin:0;">Resultados de Estudios y Consultas</h3>
-        <button class="btn-admin-primary" onclick="openAddResultModal('${c.id}')" style="font-size:0.78rem; padding:0.4rem 0.8rem;">
-          + Agregar Resultado
-        </button>
+        <div style="display:flex; gap:0.5rem;">
+          <button class="btn-admin-secondary" onclick="openPreloadModal('${c.id}')" style="font-size:0.78rem; padding:0.4rem 0.8rem;" title="Elegí qué categorías precargar en este caso">
+            ⚡ Precargar Categorías
+          </button>
+          <button class="btn-admin-primary" onclick="openAddResultModal('${c.id}')" style="font-size:0.78rem; padding:0.4rem 0.8rem;">
+            + Agregar Resultado
+          </button>
+        </div>
       </div>
 
-      <div class="results-sections-wrapper" style="max-height:420px; overflow-y:auto; padding-right:0.25rem; display:flex; flex-direction:column; gap:1.25rem;">
-        ${totalItems === 0
-      ? `<p class="empty-msg" style="padding:2rem 0; text-align:center; font-style:italic; font-size:0.85rem; color:var(--text-muted);">No hay estudios cargados para este caso.</p>`
-      : Object.entries(categories).map(([catKey, cat]) => {
-        if (cat.items.length === 0) return "";
-        return `
-                <div class="category-block" style="display:flex; flex-direction:column; gap:0.5rem;">
-                  <h4 style="font-size:0.75rem; font-weight:700; color:var(--primary-light); text-transform:uppercase; letter-spacing:0.06em; margin:0 0 0.25rem 0;">
-                    ${cat.label}
-                  </h4>
-                  <div style="display:flex; flex-direction:column; gap:0.5rem;">
-                    ${cat.items.map(item => `
+      <div class="results-sections-wrapper" style="max-height:480px; overflow-y:auto; padding-right:0.25rem; display:flex; flex-direction:column; gap:1.5rem;">
+        ${CATEGORY_GROUPS.map(group => {
+          const groupTypes = STUDY_TYPES.filter(t => group.typeIds.includes(t.id));
+          return `
+            <div class="category-block" style="display:flex; flex-direction:column; gap:0.6rem;">
+              <h4 style="font-size:0.75rem; font-weight:700; color:var(--primary-light); text-transform:uppercase; letter-spacing:0.06em; margin:0 0 0.2rem 0; border-bottom: 1px dashed rgba(255,255,255,0.08); padding-bottom: 0.25rem;">
+                ${group.label}
+              </h4>
+              <div style="display:flex; flex-direction:column; gap:0.5rem;">
+                ${groupTypes.map(studyType => {
+                  const items = resultsByTypeId[studyType.id] || [];
+                  const loadedItems = items.filter(i => i.hasContent);
+
+                  if (loadedItems.length > 0) {
+                    return loadedItems.map(item => `
                       <div class="result-admin-item" style="display:flex; align-items:center; padding:0.65rem 0.85rem; border-radius:var(--radius-md); border:1px solid var(--border); background:rgba(255,255,255,0.015); gap:1rem;">
                         <div class="result-admin-actions" style="display:flex; gap:0.35rem; flex-shrink:0;">
-                          <button class="btn-icon-sm" onclick="editResult('${c.id}', '${item.key}')" style="display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px;">✏️</button>
-                          <button class="btn-icon-sm danger" onclick="deleteResult('${c.id}', '${item.key}')" style="display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px;">🗑</button>
+                          <button class="btn-icon-sm" onclick="editResult('${c.id}', '${item.key}')" style="display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px;" title="Editar">✏️</button>
+                          <button class="btn-icon-sm danger" onclick="deleteResult('${c.id}', '${item.key}')" style="display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px;" title="Eliminar">🗑</button>
                         </div>
                         <div style="flex:1; min-width:0;">
                           <div style="display:flex; align-items:center; gap:0.4rem; margin-bottom:0.2rem; flex-wrap:wrap;">
                             <span class="result-type-badge" style="font-size:0.65rem; font-weight:700; text-transform:uppercase; background:var(--primary-glow); color:var(--primary-light); padding:0.15rem 0.4rem; border-radius:4px;">
-                              ${item.typeObj ? item.typeObj.icon + " " + item.typeObj.label : item.typeId}
+                              ${studyType.icon} ${studyType.label}
                             </span>
                             <span style="font-size:0.78rem; font-weight:700; color:var(--text-primary);">${item.displayKey}</span>
                           </div>
@@ -662,14 +724,151 @@ function renderSelectedCaseDetail() {
                           </p>
                         </div>
                       </div>
-                    `).join("")}
-                  </div>
-                </div>
-              `;
-      }).join("")}
+                    `).join("");
+                  } else {
+                    return `
+                      <div class="result-admin-item empty-slot" style="display:flex; align-items:center; padding:0.6rem 0.85rem; border-radius:var(--radius-md); gap:1rem;">
+                        <div style="flex:1; min-width:0;">
+                          <div style="display:flex; align-items:center; gap:0.45rem; flex-wrap:wrap;">
+                            <span style="font-size:0.85rem;">${studyType.icon}</span>
+                            <span style="font-size:0.78rem; font-weight:700; color:var(--text-primary);">${studyType.label}</span>
+                            <span class="empty-slot-badge">⚪ Pendiente</span>
+                          </div>
+                          <p style="margin:0.2rem 0 0 0; font-size:0.73rem; color:var(--text-muted);">${studyType.description || 'Sin datos cargados'}</p>
+                        </div>
+                        <button class="btn-quick-add" onclick="openAddResultModal('${c.id}', '${studyType.id}')">
+                          ➕ Cargar
+                        </button>
+                      </div>
+                    `;
+                  }
+                }).join("")}
+              </div>
+            </div>
+          `;
+        }).join("")}
       </div>
     </div>
   `;
+}
+
+function buildPreloadModal() {
+  return `
+    <div class="modal-overlay" id="preload-modal">
+      <div class="modal modal-lg">
+        <div class="modal-header">
+          <h3>⚡ Seleccionar Categorías y Estudios a Precargar</h3>
+          <button class="modal-close" data-modal="preload-modal">✕</button>
+        </div>
+        <div style="margin-bottom:0.75rem;">
+          <p style="font-size:0.82rem; color:var(--text-secondary); margin-bottom:0.75rem;">
+            Seleccioná los estudios de la estructura estándar (basada en el Caso 1) que querés precargar en este caso. Podés marcar los que necesites para ir completando los datos.
+          </p>
+          <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:1rem;">
+            <button type="button" class="btn-admin-secondary" onclick="toggleAllPreloadCheckboxes(true)" style="font-size:0.75rem; padding:0.25rem 0.5rem;">
+              ☑️ Seleccionar todo
+            </button>
+            <button type="button" class="btn-admin-secondary" onclick="toggleAllPreloadCheckboxes(false)" style="font-size:0.75rem; padding:0.25rem 0.5rem;">
+              ⏹️ Desmarcar todo
+            </button>
+          </div>
+        </div>
+        <form id="preload-form" onsubmit="applySelectedPreloadTemplates(event)">
+          <input type="hidden" id="preload-case-id">
+          <div id="preload-checkboxes-container" style="max-height:380px; overflow-y:auto; padding-right:0.4rem; display:flex; flex-direction:column; gap:1.25rem;">
+            <!-- Rendered dynamically by openPreloadModal -->
+          </div>
+          <button type="submit" class="btn-admin-primary full-width" style="margin-top:1.25rem;">
+            ⚡ Precargar Categorías Seleccionadas
+          </button>
+        </form>
+      </div>
+    </div>`;
+}
+
+function openPreloadModal(caseId) {
+  const c = dbCases.find(x => x.id === caseId);
+  if (!c) return;
+
+  document.getElementById("preload-case-id").value = caseId;
+  const container = document.getElementById("preload-checkboxes-container");
+
+  container.innerHTML = CATEGORY_GROUPS.map(group => {
+    const templatesInGroup = STANDARD_CASO1_TEMPLATES.filter(t => t.group === group.id);
+    return `
+      <div style="display:flex; flex-direction:column; gap:0.5rem;">
+        <h4 style="font-size:0.78rem; font-weight:700; color:var(--primary-light); text-transform:uppercase; letter-spacing:0.05em; margin:0; border-bottom:1px dashed var(--border); padding-bottom:0.25rem;">
+          ${group.label}
+        </h4>
+        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(240px, 1fr)); gap:0.5rem;">
+          ${templatesInGroup.map(t => {
+            const hasData = c.results && t.key in c.results && c.results[t.key] && c.results[t.key].trim().length > 0;
+            return `
+              <label style="display:flex; align-items:flex-start; gap:0.5rem; padding:0.45rem 0.6rem; border:1px solid var(--border); border-radius:var(--radius-md); background:${hasData ? 'rgba(16,185,129,0.04)' : 'rgba(255,255,255,0.015)'}; cursor:pointer;">
+                <input type="checkbox" name="preload-template-key" value="${t.key}" ${hasData ? 'checked' : 'checked'} style="width:16px; height:16px; margin-top:2px;">
+                <div style="flex:1; min-width:0;">
+                  <span style="font-size:0.78rem; font-weight:600; color:${hasData ? 'var(--success)' : 'var(--text-primary)'}; display:block;">
+                    ${t.label} ${hasData ? '<span style="font-size:0.65rem; font-weight:normal; color:var(--text-muted);">(Cargado)</span>' : ''}
+                  </span>
+                </div>
+              </label>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  document.getElementById("preload-modal").classList.add("open");
+}
+
+function toggleAllPreloadCheckboxes(check) {
+  document.querySelectorAll('input[name="preload-template-key"]').forEach(cb => cb.checked = check);
+}
+
+async function applySelectedPreloadTemplates(e) {
+  e.preventDefault();
+  const caseId = document.getElementById("preload-case-id").value;
+  const c = dbCases.find(x => x.id === caseId);
+  if (!c) return;
+
+  const checkedBoxes = document.querySelectorAll('input[name="preload-template-key"]:checked');
+  const selectedKeys = Array.from(checkedBoxes).map(cb => cb.value);
+
+  if (selectedKeys.length === 0) {
+    showAdminToast("No seleccionaste ninguna categoría para precargar.", "error");
+    return;
+  }
+
+  const updatedResults = { ...c.results };
+  let countAdded = 0;
+
+  selectedKeys.forEach(key => {
+    const tmpl = STANDARD_CASO1_TEMPLATES.find(t => t.key === key);
+    if (tmpl) {
+      if (!(key in updatedResults) || !updatedResults[key] || !updatedResults[key].trim()) {
+        updatedResults[key] = tmpl.defaultVal;
+        countAdded++;
+      }
+    }
+  });
+
+  try {
+    const { error } = await supabaseClient
+      .from('cases')
+      .update({ results: updatedResults })
+      .eq('id', caseId);
+
+    if (error) throw error;
+
+    document.getElementById("preload-modal").classList.remove("open");
+    await refreshAdminData();
+    renderSelectedCaseDetail();
+    showAdminToast(`Se precargaron ${countAdded > 0 ? countAdded : selectedKeys.length} categorías de estudio en el caso.`);
+  } catch (err) {
+    console.error("Error al precargar categorías en Supabase:", err);
+    showAdminToast("Error de conexión al guardar plantillas", "error");
+  }
 }
 
 async function syncLocalCasesToSupabase() {
@@ -747,7 +946,16 @@ function buildCaseModal() {
             </select>
           </div>
           <div class="form-group"><label>Inicio de síntomas</label><input type="text" id="case-onset" placeholder="Ej: Desde los 6 meses de vida, 4 meses de evolución..."></div>
-          <button type="submit" class="btn-admin-primary full-width">Crear Caso</button>
+          <div class="form-group" style="margin-top:0.75rem;">
+            <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; font-size:0.85rem; color:var(--text-primary);">
+              <input type="checkbox" id="case-preload-categories" checked style="width:16px; height:16px; accent-color:var(--primary);">
+              ⚡ Precargar plantilla con categorías vacías
+            </label>
+            <span class="form-hint" style="font-size:0.75rem; color:var(--text-muted); display:block; margin-top:0.2rem;">
+              Crea las secciones de Antecedentes, Hemograma, Citometría, ELISA, PCR, etc. listas para completar.
+            </span>
+          </div>
+          <button type="submit" class="btn-admin-primary full-width" style="margin-top:0.5rem;">Crear Caso</button>
         </form>
       </div>
     </div>`;
@@ -851,13 +1059,27 @@ function onResultTypeChange() {
 
 function openCaseModal() { document.getElementById("case-modal").classList.add("open"); }
 
-function openAddResultModal(caseId) {
+function openAddResultModal(caseId, defaultTypeId = null) {
   document.getElementById("result-modal-title").textContent = "Agregar Resultado";
   document.getElementById("result-case-id").value = caseId;
   document.getElementById("result-original-key").value = "";
   document.getElementById("result-form").reset();
   document.getElementById("result-case-id").value = caseId;
+
+  if (defaultTypeId) {
+    const studySelect = document.getElementById("result-study-type");
+    if (studySelect) studySelect.value = defaultTypeId;
+  }
+
   onResultTypeChange();
+
+  if (defaultTypeId) {
+    const templateMatch = STANDARD_CASO1_TEMPLATES.find(t => t.typeId === defaultTypeId);
+    if (templateMatch) {
+      document.getElementById("result-text").value = templateMatch.defaultVal;
+    }
+  }
+
   document.getElementById("result-modal").classList.add("open");
 }
 
@@ -951,9 +1173,17 @@ async function addCase(e) {
   const age = document.getElementById("case-age").value.trim() || "—";
   const gender = document.getElementById("case-gender").value;
   const onset = document.getElementById("case-onset").value.trim() || "—";
+  const shouldPreload = document.getElementById("case-preload-categories")?.checked !== false;
 
   const id = "caso-" + Date.now();
   const infoText = `INFORMACIÓN DEL PACIENTE:\n• Edad: ${age}\n• Género: ${gender}\n• Inicio de síntomas: ${onset}`;
+
+  const initialResults = { "info-paciente::general": infoText };
+  if (shouldPreload) {
+    STANDARD_CASO1_TEMPLATES.forEach(t => {
+      initialResults[t.key] = t.defaultVal;
+    });
+  }
 
   try {
     const { error } = await supabaseClient
@@ -964,7 +1194,7 @@ async function addCase(e) {
         description: desc,
         status: "draft",
         patient: { age, gender, symptomOnset: onset },
-        results: { "info-paciente::general": infoText }
+        results: initialResults
       });
 
     if (error) throw error;
@@ -974,7 +1204,7 @@ async function addCase(e) {
     await refreshAdminData();
     const content = document.getElementById("admin-content");
     renderCasesTab(content);
-    showAdminToast("Caso creado en Supabase (en borrador)");
+    showAdminToast("Caso creado en Supabase con categorías precargadas (en borrador)");
   } catch (err) {
     console.error("Error al crear caso en Supabase:", err);
     showAdminToast("Error de conexión", "error");
