@@ -146,10 +146,11 @@ function renderCaseSelector() {
   examCases.forEach(c => {
     const card = document.createElement("div");
     card.className = "case-card" + (currentCase?.id === c.id ? " active" : "");
+    const caseNameTranslated = typeof translateMedicalText === "function" ? translateMedicalText(c.name) : c.name;
     card.innerHTML = `
       <div class="case-card-header">
         <span class="case-icon">📋</span>
-        <span class="case-name">${c.name}</span>
+        <span class="case-name">${caseNameTranslated}</span>
       </div>
     `;
     card.addEventListener("click", () => selectCase(c, card));
@@ -164,7 +165,7 @@ async function selectCase(c, cardEl) {
 
   document.getElementById("no-case-msg").style.display = "none";
   document.getElementById("study-panel").style.display = "flex";
-  document.getElementById("current-case-name").textContent = c.name;
+  document.getElementById("current-case-name").textContent = typeof translateMedicalText === "function" ? translateMedicalText(c.name) : c.name;
 
   // Actualizar el marcador de tokens para el caso seleccionado
   await updateTokenBadge();
@@ -209,19 +210,80 @@ const REGION_METADATA = {
   genetica: { label: "Segregación Genética", icon: "👥", color: "var(--accent-light)", onSilhouette: false }
 };
 
-function getMarkerCoords(region) {
-  const coords = {
-    antecedentes: { x: 50, y: -3 }, // Logo arriba de la cabeza
-    head: { x: 50, y: 9 },         // Centro de la cabeza
-    lungs: { x: 58, y: 25 },        // Pulmón derecho
-    cardio: { x: 45, y: 24 },       // Corazón (pecho izquierdo)
-    hemato: { x: 79, y: 30 },       // Brazo derecho
-    vacunas: { x: 21, y: 30 },      // Brazo izquierdo
-    gastro: { x: 50, y: 36 },       // Abdomen
-    dermato: { x: 30, y: 17 },      // Hombro izquierdo
-    joints: { x: 41, y: 67 }        // Rodilla izquierda
+function getAgeBracket(ageStr) {
+  if (!ageStr) return "adult";
+  const s = ageStr.toLowerCase().trim();
+  
+  // Detección de neonatos, lactantes, meses, semanas o días
+  if (s.includes("mes") || s.includes("día") || s.includes("dia") || s.includes("semana") || s.includes("neonato") || s.includes("lactante") || s.includes("rn") || s.includes("recién") || s.includes("recien") || s.includes("bebé") || s.includes("bebe")) {
+    const matchMonths = s.match(/(\d+)\s*mes/);
+    if (matchMonths) {
+      const months = parseInt(matchMonths[1], 10);
+      if (months > 24) return "child";
+    }
+    return "baby";
+  }
+  
+  // Detección de años
+  const matchYears = s.match(/(\d+)\s*año/);
+  if (matchYears) {
+    const years = parseInt(matchYears[1], 10);
+    if (years < 2) return "baby";
+    if (years <= 12) return "child";
+    return "adult";
+  }
+  
+  // Número suelto
+  const matchNum = s.match(/\b(\d+)\b/);
+  if (matchNum) {
+    const num = parseInt(matchNum[1], 10);
+    if (num < 2) return "baby";
+    if (num <= 12) return "child";
+    return "adult";
+  }
+
+  return "adult";
+}
+
+function getMarkerCoords(region, ageBracket = "adult") {
+  const coordsByAge = {
+    adult: {
+      antecedentes: { x: 50, y: -3 }, // Logo arriba de la cabeza
+      head: { x: 50, y: 9 },         // Centro de la cabeza
+      lungs: { x: 58, y: 25 },        // Pulmón derecho
+      cardio: { x: 45, y: 24 },       // Corazón (pecho izquierdo)
+      hemato: { x: 79, y: 30 },       // Brazo derecho
+      vacunas: { x: 21, y: 30 },      // Brazo izquierdo
+      gastro: { x: 50, y: 36 },       // Abdomen
+      dermato: { x: 30, y: 17 },      // Hombro izquierdo
+      joints: { x: 41, y: 67 }        // Rodilla izquierda
+    },
+    child: {
+      antecedentes: { x: 50, y: 8 },
+      head: { x: 50, y: 20 },
+      lungs: { x: 58, y: 36 },
+      cardio: { x: 44, y: 35 },
+      hemato: { x: 76, y: 40 },
+      vacunas: { x: 24, y: 40 },
+      gastro: { x: 50, y: 47 },
+      dermato: { x: 32, y: 29 },
+      joints: { x: 42, y: 69 }
+    },
+    baby: {
+      antecedentes: { x: 50, y: 19 },
+      head: { x: 50, y: 34 },
+      lungs: { x: 57, y: 47 },
+      cardio: { x: 44, y: 46 },
+      hemato: { x: 75, y: 50 },
+      vacunas: { x: 25, y: 50 },
+      gastro: { x: 50, y: 55 },
+      dermato: { x: 33, y: 42 },
+      joints: { x: 43, y: 70 }
+    }
   };
-  return coords[region] || { x: 50, y: 50 };
+
+  const selectedSet = coordsByAge[ageBracket] || coordsByAge.adult;
+  return selectedSet[region] || { x: 50, y: 50 };
 }
 
 function classifyFinding(typeId, subtypeId, target, resultText) {
@@ -294,11 +356,17 @@ function getFindingsForCase(caseId) {
     entry.found
   );
 
+  const isEn = typeof currentLang !== "undefined" && currentLang === "en";
+  const generalTitle = isEn ? "General Demographics" : "Datos Generales";
+  const ageLabel = isEn ? "Age:" : "Edad:";
+  const genderLabel = isEn ? "Gender:" : "Género:";
+  const onsetLabel = isEn ? "Symptom onset:" : "Inicio de síntomas:";
+
   const findings = {
     general: {
-      title: "Datos Generales",
+      title: generalTitle,
       icon: "🧑‍⚕️",
-      text: `• <strong>Edad:</strong> ${c.patient.age || "—"}\n• <strong>Género:</strong> ${c.patient.gender || "—"}${hasUnlockedOnset ? `\n• <strong>Inicio de síntomas:</strong> ${c.patient.symptomOnset || "—"}` : ""}\n\n`
+      text: `• <strong>${ageLabel}</strong> ${typeof translateMedicalText === "function" ? translateMedicalText(c.patient.age) : (c.patient.age || "—")}\n• <strong>${genderLabel}</strong> ${typeof translateMedicalText === "function" ? translateMedicalText(c.patient.gender) : (c.patient.gender || "—")}${hasUnlockedOnset ? `\n• <strong>${onsetLabel}</strong> ${typeof translateMedicalText === "function" ? translateMedicalText(c.patient.symptomOnset) : (c.patient.symptomOnset || "—")}` : ""}\n\n`
     }
   };
 
@@ -315,7 +383,10 @@ function getFindingsForCase(caseId) {
           text: ""
         };
       }
-      findings[region].text += `• <strong>${entry.type.label}${entry.target ? ` (${entry.target})` : ''}:</strong>\n${entry.result}\n\n`;
+      const translatedResult = typeof translateMedicalText === "function" ? translateMedicalText(entry.result) : entry.result;
+      const typeLabel = typeof translateLabel === "function" ? translateLabel(entry.type.label) : entry.type.label;
+      const targetLabel = typeof translateLabel === "function" ? translateLabel(entry.target) : entry.target;
+      findings[region].text += `• <strong>${typeLabel}${targetLabel ? ` (${targetLabel})` : ''}:</strong>\n${translatedResult}\n\n`;
     }
   });
 
@@ -353,52 +424,113 @@ function renderCaseInfoBanner(c) {
   // Determinar qué regiones están activas (tienen al menos un hallazgo)
   const activeRegions = Object.keys(findings).filter(r => r !== "general");
 
-  // Elegir silueta según el género
+  // Detección de género y grupo etario
   const isFemale = p.gender && p.gender.toLowerCase() === "femenino";
+  const ageBracket = getAgeBracket(p.age);
 
-  // Detalle de la silueta SVG (Holograma médico geométrico)
-  const headCircle = `<circle cx="50" cy="20" r="10" fill="rgba(99, 102, 241, 0.04)" stroke="var(--border-active)" stroke-width="1.5" />`;
+  // Regla biométrica de altura médica (eje lateral izquierdo decorativo)
+  const heightRuler = `
+    <!-- Escala métrica holográfica -->
+    <line x1="8" y1="20" x2="8" y2="200" stroke="rgba(99, 102, 241, 0.2)" stroke-width="1" />
+    <line x1="5" y1="20" x2="11" y2="20" stroke="rgba(99, 102, 241, 0.35)" stroke-width="1" />
+    <line x1="6" y1="50" x2="10" y2="50" stroke="rgba(99, 102, 241, 0.2)" stroke-width="0.75" />
+    <line x1="5" y1="80" x2="11" y2="80" stroke="rgba(99, 102, 241, 0.35)" stroke-width="1" />
+    <line x1="6" y1="110" x2="10" y2="110" stroke="rgba(99, 102, 241, 0.2)" stroke-width="0.75" />
+    <line x1="5" y1="140" x2="11" y2="140" stroke="rgba(99, 102, 241, 0.35)" stroke-width="1" />
+    <line x1="6" y1="170" x2="10" y2="170" stroke="rgba(99, 102, 241, 0.2)" stroke-width="0.75" />
+    <line x1="5" y1="200" x2="11" y2="200" stroke="rgba(99, 102, 241, 0.35)" stroke-width="1" />
+  `;
 
-  const bodyDetails = isFemale
-    ? `
-      <!-- Cuello -->
-      <line x1="50" y1="30" x2="50" y2="38" stroke="var(--border-active)" stroke-width="1.5" />
-      <!-- Clavícula -->
-      <line x1="35" y1="38" x2="65" y2="38" stroke="var(--border-active)" stroke-width="1.5" stroke-linecap="round" />
-      <!-- Tronco femenino (entallado) -->
-      <path d="M35 38 L65 38 L60 70 L65 105 L35 105 L40 70 Z" fill="rgba(99, 102, 241, 0.03)" stroke="var(--border-active)" stroke-width="1.5" stroke-linejoin="round" />
-      <!-- Brazos -->
-      <line x1="35" y1="38" x2="22" y2="95" stroke="var(--border-active)" stroke-width="1.5" stroke-linecap="round" />
-      <line x1="65" y1="38" x2="78" y2="95" stroke="var(--border-active)" stroke-width="1.5" stroke-linecap="round" />
-      <!-- Piernas -->
-      <line x1="42" y1="105" x2="40" y2="200" stroke="var(--border-active)" stroke-width="1.5" stroke-linecap="round" />
-      <line x1="58" y1="105" x2="60" y2="200" stroke="var(--border-active)" stroke-width="1.5" stroke-linecap="round" />
-    `
-    : `
-      <!-- Cuello -->
-      <line x1="50" y1="30" x2="50" y2="38" stroke="var(--border-active)" stroke-width="1.5" />
-      <!-- Clavícula -->
-      <line x1="33" y1="38" x2="67" y2="38" stroke="var(--border-active)" stroke-width="1.5" stroke-linecap="round" />
-      <!-- Tronco masculino -->
-      <path d="M33 38 L67 38 L64 70 L64 105 L36 105 L36 70 Z" fill="rgba(99, 102, 241, 0.03)" stroke="var(--border-active)" stroke-width="1.5" stroke-linejoin="round" />
-      <!-- Brazos -->
-      <line x1="33" y1="38" x2="20" y2="95" stroke="var(--border-active)" stroke-width="1.5" stroke-linecap="round" />
-      <line x1="67" y1="38" x2="80" y2="95" stroke="var(--border-active)" stroke-width="1.5" stroke-linecap="round" />
-      <!-- Piernas -->
-      <line x1="40" y1="105" x2="38" y2="200" stroke="var(--border-active)" stroke-width="1.5" stroke-linecap="round" />
-      <line x1="60" y1="105" x2="62" y2="200" stroke="var(--border-active)" stroke-width="1.5" stroke-linecap="round" />
+  // Construcción de la silueta según grupo etario
+  let silhouetteSVG = "";
+
+  if (ageBracket === "baby") {
+    // 👶 SILUETA LACTANTE / BEBÉ (< 2 AÑOS)
+    silhouetteSVG = `
+      <!-- Cabeza proporcionalmente grande -->
+      <circle cx="50" cy="75" r="14" fill="rgba(99, 102, 241, 0.05)" stroke="var(--border-active)" stroke-width="1.5" />
+      <!-- Cuello corto -->
+      <line x1="50" y1="89" x2="50" y2="93" stroke="var(--border-active)" stroke-width="1.5" />
+      <!-- Torso compacto / pañal -->
+      <path d="M38 93 C32 103, 30 118, 34 133 C38 139, 62 139, 66 133 C70 118, 68 103, 62 93 Z" fill="rgba(99, 102, 241, 0.04)" stroke="var(--border-active)" stroke-width="1.5" stroke-linejoin="round" />
+      <!-- Brazos de bebé curvos -->
+      <path d="M38 95 C27 102, 23 110, 27 118" fill="none" stroke="var(--border-active)" stroke-width="1.5" stroke-linecap="round" />
+      <path d="M62 95 C73 102, 77 110, 73 118" fill="none" stroke="var(--border-active)" stroke-width="1.5" stroke-linecap="round" />
+      <!-- Piernas cortas y abiertas -->
+      <path d="M42 133 C38 144, 36 156, 40 165" fill="none" stroke="var(--border-active)" stroke-width="1.5" stroke-linecap="round" />
+      <path d="M58 133 C62 144, 64 156, 60 165" fill="none" stroke="var(--border-active)" stroke-width="1.5" stroke-linecap="round" />
+      <!-- Guía de suelo -->
+      <line x1="25" y1="168" x2="75" y2="168" stroke="rgba(99, 102, 241, 0.15)" stroke-width="1" stroke-dasharray="2,2" />
     `;
+  } else if (ageBracket === "child") {
+    // 🧒 SILUETA PEDIÁTRICA / INFANTIL (2 - 12 AÑOS)
+    silhouetteSVG = `
+      <!-- Cabeza infantil -->
+      <circle cx="50" cy="45" r="11" fill="rgba(99, 102, 241, 0.04)" stroke="var(--border-active)" stroke-width="1.5" />
+      <!-- Cuello -->
+      <line x1="50" y1="56" x2="50" y2="63" stroke="var(--border-active)" stroke-width="1.5" />
+      <!-- Clavícula -->
+      <line x1="36" y1="63" x2="64" y2="63" stroke="var(--border-active)" stroke-width="1.5" stroke-linecap="round" />
+      <!-- Torso pediátrico -->
+      <path d="M36 63 L64 63 L61 90 L61 118 L39 118 L39 90 Z" fill="rgba(99, 102, 241, 0.03)" stroke="var(--border-active)" stroke-width="1.5" stroke-linejoin="round" />
+      <!-- Brazos -->
+      <line x1="36" y1="63" x2="24" y2="108" stroke="var(--border-active)" stroke-width="1.5" stroke-linecap="round" />
+      <line x1="64" y1="63" x2="76" y2="108" stroke="var(--border-active)" stroke-width="1.5" stroke-linecap="round" />
+      <!-- Piernas -->
+      <line x1="43" y1="118" x2="41" y2="185" stroke="var(--border-active)" stroke-width="1.5" stroke-linecap="round" />
+      <line x1="57" y1="118" x2="59" y2="185" stroke="var(--border-active)" stroke-width="1.5" stroke-linecap="round" />
+      <!-- Guía de suelo -->
+      <line x1="25" y1="188" x2="75" y2="188" stroke="rgba(99, 102, 241, 0.15)" stroke-width="1" stroke-dasharray="2,2" />
+    `;
+  } else {
+    // 🧑 SILUETA ADOLESCENTE / ADULTO (> 12 AÑOS)
+    const headCircle = `<circle cx="50" cy="20" r="10" fill="rgba(99, 102, 241, 0.04)" stroke="var(--border-active)" stroke-width="1.5" />`;
+    const bodyDetails = isFemale
+      ? `
+        <!-- Cuello -->
+        <line x1="50" y1="30" x2="50" y2="38" stroke="var(--border-active)" stroke-width="1.5" />
+        <!-- Clavícula -->
+        <line x1="35" y1="38" x2="65" y2="38" stroke="var(--border-active)" stroke-width="1.5" stroke-linecap="round" />
+        <!-- Tronco femenino (entallado) -->
+        <path d="M35 38 L65 38 L60 70 L65 105 L35 105 L40 70 Z" fill="rgba(99, 102, 241, 0.03)" stroke="var(--border-active)" stroke-width="1.5" stroke-linejoin="round" />
+        <!-- Brazos -->
+        <line x1="35" y1="38" x2="22" y2="95" stroke="var(--border-active)" stroke-width="1.5" stroke-linecap="round" />
+        <line x1="65" y1="38" x2="78" y2="95" stroke="var(--border-active)" stroke-width="1.5" stroke-linecap="round" />
+        <!-- Piernas -->
+        <line x1="42" y1="105" x2="40" y2="200" stroke="var(--border-active)" stroke-width="1.5" stroke-linecap="round" />
+        <line x1="58" y1="105" x2="60" y2="200" stroke="var(--border-active)" stroke-width="1.5" stroke-linecap="round" />
+      `
+      : `
+        <!-- Cuello -->
+        <line x1="50" y1="30" x2="50" y2="38" stroke="var(--border-active)" stroke-width="1.5" />
+        <!-- Clavícula -->
+        <line x1="33" y1="38" x2="67" y2="38" stroke="var(--border-active)" stroke-width="1.5" stroke-linecap="round" />
+        <!-- Tronco masculino -->
+        <path d="M33 38 L67 38 L64 70 L64 105 L36 105 L36 70 Z" fill="rgba(99, 102, 241, 0.03)" stroke="var(--border-active)" stroke-width="1.5" stroke-linejoin="round" />
+        <!-- Brazos -->
+        <line x1="33" y1="38" x2="20" y2="95" stroke="var(--border-active)" stroke-width="1.5" stroke-linecap="round" />
+        <line x1="67" y1="38" x2="80" y2="95" stroke="var(--border-active)" stroke-width="1.5" stroke-linecap="round" />
+        <!-- Piernas -->
+        <line x1="40" y1="105" x2="38" y2="200" stroke="var(--border-active)" stroke-width="1.5" stroke-linecap="round" />
+        <line x1="60" y1="105" x2="62" y2="200" stroke="var(--border-active)" stroke-width="1.5" stroke-linecap="round" />
+      `;
+
+    silhouetteSVG = headCircle + bodyDetails + `
+      <!-- Guía de suelo -->
+      <line x1="25" y1="202" x2="75" y2="202" stroke="rgba(99, 102, 241, 0.15)" stroke-width="1" stroke-dasharray="2,2" />
+    `;
+  }
 
   const specialRegions = activeRegions.filter(r => REGION_METADATA[r].onSilhouette === false);
   const specialStudiesHTML = specialRegions.length > 0
     ? `
       <div class="special-studies-silhouette">
-        <div class="special-studies-title">Estudios Especiales</div>
+        <div class="special-studies-title">${typeof t === "function" ? t("findings_special_studies") : "Estudios Especiales"}</div>
         <div class="special-studies-tags">
           ${specialRegions.map(r => `
-            <div class="special-study-tag" onclick="highlightFindingGroup('${r}')" title="${REGION_METADATA[r].label} (Click para ver detalles)">
+            <div class="special-study-tag" onclick="highlightFindingGroup('${r}')" title="${typeof translateLabel === "function" ? translateLabel(REGION_METADATA[r].label) : REGION_METADATA[r].label} (Click para ver)">
               <span class="special-study-icon">${REGION_METADATA[r].icon}</span>
-              <span class="special-study-label">${REGION_METADATA[r].label}</span>
+              <span class="special-study-label">${typeof translateLabel === "function" ? translateLabel(REGION_METADATA[r].label) : REGION_METADATA[r].label}</span>
             </div>
           `).join("")}
         </div>
@@ -409,17 +541,17 @@ function renderCaseInfoBanner(c) {
   // HTML para la columna del mapa corporal
   const bodyMapHTML = `
     <div class="body-map-column">
-      <span class="body-map-title">${p.gender || "Paciente"}</span>
+      <span class="body-map-title">${typeof translateLabel === "function" ? translateLabel(p.gender) : (p.gender || "Paciente")}</span>
       <div class="body-map-wrapper">
         <svg class="body-silhouette-svg" viewBox="0 0 100 220">
-          ${headCircle}
-          ${bodyDetails}
+          ${heightRuler}
+          ${silhouetteSVG}
           
           <!-- Líneas de conexión decorativas de red médica en los marcadores activos -->
           ${activeRegions
             .filter(r => REGION_METADATA[r].onSilhouette !== false)
             .map(r => {
-              const coords = getMarkerCoords(r);
+              const coords = getMarkerCoords(r, ageBracket);
               return `<line x1="50" y1="55" x2="${coords.x}" y2="${(coords.y * 2.2).toFixed(1)}" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="2,2" />`;
             }).join("")}
         </svg>
@@ -428,15 +560,15 @@ function renderCaseInfoBanner(c) {
         ${Object.keys(REGION_METADATA)
           .filter(r => REGION_METADATA[r].onSilhouette !== false && activeRegions.includes(r))
           .map(r => {
-            const coords = getMarkerCoords(r);
-            const label = REGION_METADATA[r].label;
+            const coords = getMarkerCoords(r, ageBracket);
+            const label = typeof translateLabel === "function" ? translateLabel(REGION_METADATA[r].label) : REGION_METADATA[r].label;
             const icon = REGION_METADATA[r].icon;
             return `
               <div 
                 class="body-marker active"
                 style="left: ${coords.x}%; top: ${coords.y}%;"
                 data-region="${r}"
-                title="${label} (Ver hallazgos)"
+                title="${label}"
                 onclick="highlightFindingGroup('${r}')"
               >
                 <span style="font-size:0.6rem;z-index:2;color:white;display:flex;align-items:center;justify-content:center;">${icon}</span>
@@ -455,7 +587,7 @@ function renderCaseInfoBanner(c) {
       <div class="findings-group" id="fg-general">
         <div class="findings-group-header">
           <span style="font-size:1.1rem;">${findings.general.icon}</span>
-          <span class="findings-group-title">${findings.general.title}</span>
+          <span class="findings-group-title">${typeof translateLabel === "function" ? translateLabel(findings.general.title) : findings.general.title}</span>
         </div>
         <p class="findings-group-text">${findings.general.text}</p>
       </div>
@@ -465,7 +597,7 @@ function renderCaseInfoBanner(c) {
         <div class="findings-group" id="fg-${r}">
           <div class="findings-group-header">
             <span style="font-size:1.1rem;">${findings[r].icon}</span>
-            <span class="findings-group-title" style="color:${REGION_METADATA[r].color};">${findings[r].title}</span>
+            <span class="findings-group-title" style="color:${REGION_METADATA[r].color};">${typeof translateLabel === "function" ? translateLabel(findings[r].title) : findings[r].title}</span>
           </div>
           <p class="findings-group-text">${findings[r].text.trim()}</p>
         </div>
@@ -473,7 +605,7 @@ function renderCaseInfoBanner(c) {
 
       ${activeRegions.length === 0 ? `
         <div style="text-align:center;padding:1.5rem;color:var(--text-muted);font-size:0.8rem;border:1px dashed var(--border);border-radius:var(--radius-md);margin-top:0.5rem;">
-          🔍 Solicitá estudios de laboratorio para revelar hallazgos en la figura humana.
+          ${typeof t === "function" ? t("findings_empty_hint") : "🔍 Solicitá estudios de laboratorio para revelar hallazgos en la figura humana."}
         </div>
       ` : ""}
     </div>
@@ -495,18 +627,18 @@ function renderFreeQueryBar() {
     container.innerHTML = `
       <div class="free-query-bar">
         <div class="free-query-header">
-          <span class="free-query-badge">🔍 Modo libre</span>
-          <span class="free-query-hint">Describí consulta o estudio que querés preguntar o solicitar</span>
+          <span class="free-query-badge">${typeof t === "function" ? t("free_query_badge") : "🔍 Modo libre"}</span>
+          <span class="free-query-hint">${typeof t === "function" ? t("free_query_hint") : "Describí consulta o estudio que querés preguntar o solicitar"}</span>
         </div>
         <form id="free-query-form" class="free-query-form">
           <input
             type="text"
             id="free-query-input"
             class="free-query-input"
-            placeholder="Primero seleccioná un caso clínico..."
+            placeholder="${typeof t === "function" ? t("free_query_placeholder_disabled") : "Primero seleccioná un caso clínico..."}"
             disabled
           >
-          <button type="submit" class="btn-free-query" id="free-query-btn" disabled>Interpretar →</button>
+          <button type="submit" class="btn-free-query" id="free-query-btn" disabled>${typeof t === "function" ? t("btn_interpret") : "Interpretar →"}</button>
         </form>
       </div>
     `;
@@ -519,13 +651,13 @@ function renderFreeQueryBar() {
     ? `
       <div id="case-welcome-bubble" class="welcome-speech-bubble" style="background: var(--primary-glow); border: 1px solid var(--border-active); border-radius: var(--radius-md); padding: 1.2rem; margin-bottom: 1.25rem; position: relative; animation: fadeInUp 0.4s ease; box-shadow: var(--shadow-sm);">
         <div style="font-size: 0.8rem; font-weight: 700; color: var(--primary-light); margin-bottom: 0.35rem; display: flex; align-items: center; gap: 0.4rem;">
-          💬 Consulta Inicial / Motivo del Paciente:
+          ${typeof t === "function" ? t("welcome_bubble_title") : "💬 Consulta Inicial / Motivo del Paciente:"}
         </div>
         <p style="margin: 0; font-size: 0.88rem; color: var(--text-primary); font-style: italic; line-height: 1.45;">
-          "${currentCase.description}"
+          "${typeof translateMedicalText === "function" ? translateMedicalText(currentCase.description) : currentCase.description}"
         </p>
         <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.6rem; font-weight: 500; border-top: 1px dashed var(--border); padding-top: 0.4rem;">
-          💡 Escribí en el cuadro de abajo lo que quieras preguntarle al paciente (ej: <em>"motivo de consulta"</em>, <em>"antecedentes familiares"</em>, <em>"inicio de síntomas"</em>) o solicita un estudio (ej: <em>"hemograma"</em>).
+          ${typeof t === "function" ? t("welcome_bubble_tip") : "💡 Escribí en el cuadro de abajo lo que quieras preguntarle al paciente o solicita un estudio."}
         </div>
       </div>`
     : "";
@@ -533,19 +665,19 @@ function renderFreeQueryBar() {
   container.innerHTML = welcomeHTML + `
     <div class="free-query-bar">
       <div class="free-query-header">
-        <span class="free-query-badge">🔍 Modo libre</span>
-        <span class="free-query-hint">Describí consulta o estudio que querés preguntar o solicitar</span>
+        <span class="free-query-badge">${typeof t === "function" ? t("free_query_badge") : "🔍 Modo libre"}</span>
+        <span class="free-query-hint">${typeof t === "function" ? t("free_query_hint") : "Describí consulta o estudio que querés preguntar o solicitar"}</span>
       </div>
       <form id="free-query-form" class="free-query-form">
         <input
           type="text"
           id="free-query-input"
           class="free-query-input"
-          placeholder="Escribí aquí tu consulta... ej: 'Motivo de consulta'"
+          placeholder="${typeof t === "function" ? t("free_query_placeholder") : "Escribí aquí tu consulta..."}"
           autocomplete="off"
           spellcheck="false"
         >
-        <button type="submit" class="btn-free-query" id="free-query-btn">Interpretar →</button>
+        <button type="submit" class="btn-free-query" id="free-query-btn">${typeof t === "function" ? t("btn_interpret") : "Interpretar →"}</button>
       </form>
       <div id="free-query-result"></div>
     </div>
@@ -589,17 +721,25 @@ async function handleFreeQuery() {
     // Registrar consulta fallida en Supabase sin costo de tokens (0 tokens)
     logFailedQuery(caseId, text);
 
+    const isEn = typeof currentLang !== "undefined" && currentLang === "en";
+    const exampleHint = isEn 
+      ? 'Example: <em>"I want to order a Western Blot for BTK"</em> or <em>"I need a complete blood count"</em>'
+      : 'Ejemplo: <em>"Quiero pedir un Western Blot de BTK"</em> o <em>"Necesito un hemograma"</em>';
+
     resultDiv.innerHTML = `
       <div class="free-parse-card error">
-        <div class="parse-card-title">⚠️ No pude interpretar tu consulta</div>
+        <div class="parse-card-title">${t("parse_card_error_title")}</div>
         <div class="parse-card-body">
-          <p>Intentá mencionar el tipo de estudio que querés (hacé clic para autocompletar):</p>
+          <p>${t("parse_card_error_sub")}</p>
           <div class="parse-hints">
-            ${STUDY_TYPES.map(t => `<span class="parse-hint-tag clickable-hint" onclick="autocompleteQueryInput('${t.label}')">${t.icon} ${t.label}</span>`).join("")}
+            ${STUDY_TYPES.map(st => {
+              const labelTr = typeof translateLabel === "function" ? translateLabel(st.label) : st.label;
+              return `<span class="parse-hint-tag clickable-hint" onclick="autocompleteQueryInput('${labelTr}')">${st.icon} ${labelTr}</span>`;
+            }).join("")}
           </div>
-          <p style="margin-top:0.75rem;font-size:0.8rem;">Ejemplo: <em>"Quiero pedir un Western Blot de BTK"</em> o <em>"Necesito un hemograma"</em></p>
+          <p style="margin-top:0.75rem;font-size:0.8rem;">${exampleHint}</p>
         </div>
-        <p style="font-size:0.78rem;color:var(--text-muted);margin-top:0.5rem;">⚡ No se consumió ningún token.</p>
+        <p style="font-size:0.78rem;color:var(--text-muted);margin-top:0.5rem;">${t("no_token_spent")}</p>
       </div>`;
     pendingFreeQuery = null;
     return;
@@ -624,13 +764,18 @@ async function handleFreeQuery() {
   const targets = splitTargets(parsed.type.id, targetDisplay);
   const cost = targets.length;
   if (currentTokens < cost) {
+    const isEn = typeof currentLang !== "undefined" && currentLang === "en";
+    const msg = isEn
+      ? `This query requires <strong>${cost} tokens</strong> (one per analyte: ${targets.join(", ")}), but you only have <strong>${currentTokens} tokens</strong> remaining for this case.`
+      : `Esta consulta requiere <strong>${cost} tokens</strong> (uno por cada analito: ${targets.join(", ")}), pero solo te quedan <strong>${currentTokens} tokens</strong> para este caso.`;
+
     resultDiv.innerHTML = `
       <div class="free-parse-card error">
-        <div class="parse-card-title">❌ Tokens insuficientes</div>
+        <div class="parse-card-title">${t("tokens_insufficient_title")}</div>
         <div class="parse-card-body">
-          <p>Esta consulta requiere <strong>${cost} tokens</strong> (uno por cada analito: ${targets.join(", ")}), pero solo te quedan <strong>${currentTokens} tokens</strong> para este caso.</p>
+          <p>${msg}</p>
         </div>
-        <p style="font-size:0.78rem;color:var(--text-muted);margin-top:0.5rem;">⚡ No se consumió ningún token.</p>
+        <p style="font-size:0.78rem;color:var(--text-muted);margin-top:0.5rem;">${t("no_token_spent")}</p>
       </div>`;
     pendingFreeQuery = null;
     return;
@@ -651,89 +796,132 @@ function showFreeQueryFollowup(parsed) {
   pendingFreeQuery = { type: parsed.type, subtype: parsed.subtype, target: "", secondaryTypes: parsed.secondaryTypes };
 
   const type = parsed.type;
+  const isEn = typeof currentLang !== "undefined" && currentLang === "en";
+  const typeLabelTr = typeof translateLabel === "function" ? translateLabel(type.label) : type.label;
   let questionText = "";
   let formFieldsHTML = "";
 
   if (type.id === "funcional" && !parsed.subtype) {
-    questionText = `Identificamos que querés solicitar un <strong>${type.label}</strong>. ¿Qué tipo de ensayo y qué estímulo o target deseás realizar?`;
+    questionText = isEn 
+      ? `We identified that you want to order a <strong>${typeLabelTr}</strong>. Which assay type and what stimulus or target do you wish to perform?`
+      : `Identificamos que querés solicitar un <strong>${type.label}</strong>. ¿Qué tipo de ensayo y qué estímulo o target deseás realizar?`;
 
-    const subOptions = type.subtypes.map(s => `<option value="${s.id}" data-placeholder="${s.placeholder}">${s.label}</option>`).join("");
+    const subOptions = type.subtypes.map(s => {
+      const subLabelTr = typeof translateLabel === "function" ? translateLabel(s.label) : s.label;
+      return `<option value="${s.id}" data-placeholder="${s.placeholder}">${subLabelTr}</option>`;
+    }).join("");
+
     formFieldsHTML = `
       <div class="input-group" style="margin-bottom: 0.75rem;">
-        <label for="followup-subtype" style="display:block;font-size:0.8rem;color:var(--text-secondary);margin-bottom:0.3rem;">Tipo de ensayo</label>
+        <label for="followup-subtype" style="display:block;font-size:0.8rem;color:var(--text-secondary);margin-bottom:0.3rem;">${t("followup_label_assay")}</label>
         <select id="followup-subtype" class="study-select" style="width:100%;">
           ${subOptions}
         </select>
       </div>
       <div class="input-group" style="margin-bottom: 0.75rem;">
-        <label for="followup-target" style="display:block;font-size:0.8rem;color:var(--text-secondary);margin-bottom:0.3rem;">Estímulo / Target</label>
+        <label for="followup-target" style="display:block;font-size:0.8rem;color:var(--text-secondary);margin-bottom:0.3rem;">${t("followup_label_stimulus")}</label>
         <input type="text" id="followup-target" class="free-query-input" style="width:100%;" placeholder="${type.subtypes[0].placeholder}" autocomplete="off" spellcheck="false">
       </div>
     `;
   } else {
-    const label = type.label;
     const subtype = parsed.subtype;
-    const subtypeDisplay = subtype ? ` (${subtype.label})` : "";
+    const subtypeLabelTr = subtype ? (typeof translateLabel === "function" ? translateLabel(subtype.label) : subtype.label) : "";
+    const subtypeDisplay = subtype ? ` (${subtypeLabelTr})` : "";
 
-    if (type.id === "western-blot") {
-      questionText = `Identificamos que querés solicitar un <strong>Western Blot</strong>. ¿Para qué gen o proteína querés realizarlo?`;
-    } else if (type.id === "elisa") {
-      questionText = `Identificamos que querés solicitar un <strong>ELISA / Dosaje</strong>. ¿Para qué inmunoglobulina, citoquina o analito querés realizarlo?`;
-    } else if (type.id === "pcr") {
-      questionText = `Identificamos que querés solicitar un estudio de <strong>Sanger / PCR / RT-PCR</strong>. ¿Para qué gen o transcripto querés realizarlo?`;
-    } else if (type.id === "citometria") {
-      questionText = `Identificamos que querés solicitar una <strong>Citometría de Flujo</strong>. ¿Para qué marcador o subpoblación celular querés realizarla?`;
-    } else if (type.id === "interconsulta") {
-      questionText = `Identificamos que querés solicitar una <strong>Interconsulta Médica</strong>. ¿Con qué especialidad (ej: Dermatología, Neurología, Neumonología) deseás realizarla?`;
-    } else if (type.id === "autoanticuerpos") {
-      questionText = `Identificamos que querés medir <strong>Anticuerpos de Autoinmunidad</strong>. ¿Qué anticuerpo específico querés dosar?`;
-    } else if (type.id === "vacuna") {
-      questionText = `Identificamos que querés solicitar un estudio de <strong>Respuesta a Vacunas</strong>. ¿Para qué antígeno vacunal (ej: Tétanos, Neumococo) querés realizarlo?`;
-    } else if (type.id === "segregacion") {
-      questionText = `Identificamos que querés solicitar un estudio de <strong>Segregación Familiar</strong>. ¿Para qué gen querés realizarlo?`;
-    } else if (type.id === "funcional" && subtype) {
-      if (subtype.id === "proliferacion") {
-        questionText = `Identificamos: <strong>Ensayo Funcional › Proliferación celular</strong>. ¿Con qué estímulo/mitógeno?`;
-      } else if (subtype.id === "citotoxicidad") {
-        questionText = `Identificamos: <strong>Ensayo Funcional › Citotoxicidad</strong>. ¿Para qué células o diana?`;
-      } else if (subtype.id === "citoquinas") {
-        questionText = `Identificamos: <strong>Ensayo Funcional › Producción de citoquinas</strong>. ¿Qué citoquina querés medir?`;
-      } else if (subtype.id === "degranulacion") {
-        questionText = `Identificamos: <strong>Ensayo Funcional › Degranulación</strong>. ¿Con qué estímulo o marcador?`;
-      } else if (subtype.id === "via-interferon") {
-        questionText = `Identificamos: <strong>Ensayo Funcional › Vía del Interferón</strong>. ¿Para qué gen específico?`;
+    if (isEn) {
+      if (type.id === "western-blot") {
+        questionText = `We identified that you want to order a <strong>Western Blot</strong>. For which gene or protein do you want to perform it?`;
+      } else if (type.id === "elisa") {
+        questionText = `We identified that you want to order an <strong>ELISA / Dosage</strong>. For which immunoglobulin, cytokine, or analyte?`;
+      } else if (type.id === "pcr") {
+        questionText = `We identified that you want to order a <strong>Sanger / PCR / RT-PCR</strong> test. For which gene or transcript?`;
+      } else if (type.id === "citometria") {
+        questionText = `We identified that you want to order a <strong>Flow Cytometry</strong> assay. For which marker or cell subset?`;
+      } else if (type.id === "interconsulta") {
+        questionText = `We identified that you want to request a <strong>Medical Consultation</strong>. With which specialty (e.g. Dermatology, Neurology, Pulmonology)?`;
+      } else if (type.id === "autoanticuerpos") {
+        questionText = `We identified that you want to test for <strong>Autoimmunity Antibodies</strong>. Which specific autoantibody?`;
+      } else if (type.id === "vacuna") {
+        questionText = `We identified that you want to check <strong>Vaccine Response</strong>. For which vaccine antigen (e.g. Tetanus, Pneumococcus)?`;
+      } else if (type.id === "segregacion") {
+        questionText = `We identified that you want to request <strong>Family Segregation</strong> analysis. For which gene?`;
+      } else if (type.id === "funcional" && subtype) {
+        if (subtype.id === "proliferacion") {
+          questionText = `Identified: <strong>Functional Assay › Cell Proliferation</strong>. With what stimulus/mitogen?`;
+        } else if (subtype.id === "citotoxicidad") {
+          questionText = `Identified: <strong>Functional Assay › Cytotoxicity</strong>. For which cells or target?`;
+        } else if (subtype.id === "citoquinas") {
+          questionText = `Identified: <strong>Functional Assay › Cytokine Production</strong>. Which cytokine do you want to measure?`;
+        } else if (subtype.id === "degranulacion") {
+          questionText = `Identified: <strong>Functional Assay › Degranulation</strong>. With which stimulus or marker?`;
+        } else if (subtype.id === "via-interferon") {
+          questionText = `Identified: <strong>Functional Assay › Interferon Pathway</strong>. For which specific gene?`;
+        }
+      } else {
+        questionText = `We identified that you want to order <strong>${typeLabelTr}${subtypeDisplay}</strong>. For which specific target or analyte?`;
       }
     } else {
-      questionText = `Identificamos que querés solicitar un estudio de <strong>${label}${subtypeDisplay}</strong>. ¿Para qué target o analito específico querés realizarlo?`;
+      if (type.id === "western-blot") {
+        questionText = `Identificamos que querés solicitar un <strong>Western Blot</strong>. ¿Para qué gen o proteína querés realizarlo?`;
+      } else if (type.id === "elisa") {
+        questionText = `Identificamos que querés solicitar un <strong>ELISA / Dosaje</strong>. ¿Para qué inmunoglobulina, citoquina o analito querés realizarlo?`;
+      } else if (type.id === "pcr") {
+        questionText = `Identificamos que querés solicitar un estudio de <strong>Sanger / PCR / RT-PCR</strong>. ¿Para qué gen o transcripto querés realizarlo?`;
+      } else if (type.id === "citometria") {
+        questionText = `Identificamos que querés solicitar una <strong>Citometría de Flujo</strong>. ¿Para qué marcador o subpoblación celular querés realizarla?`;
+      } else if (type.id === "interconsulta") {
+        questionText = `Identificamos que querés solicitar una <strong>Interconsulta Médica</strong>. ¿Con qué especialidad (ej: Dermatología, Neurología, Neumonología) deseás realizarla?`;
+      } else if (type.id === "autoanticuerpos") {
+        questionText = `Identificamos que querés medir <strong>Anticuerpos de Autoinmunidad</strong>. ¿Qué anticuerpo específico querés dosar?`;
+      } else if (type.id === "vacuna") {
+        questionText = `Identificamos que querés solicitar un estudio de <strong>Respuesta a Vacunas</strong>. ¿Para qué antígeno vacunal (ej: Tétanos, Neumococo) querés realizarlo?`;
+      } else if (type.id === "segregacion") {
+        questionText = `Identificamos que querés solicitar un estudio de <strong>Segregación Familiar</strong>. ¿Para qué gen querés realizarlo?`;
+      } else if (type.id === "funcional" && subtype) {
+        if (subtype.id === "proliferacion") {
+          questionText = `Identificamos: <strong>Ensayo Funcional › Proliferación celular</strong>. ¿Con qué estímulo/mitógeno?`;
+        } else if (subtype.id === "citotoxicidad") {
+          questionText = `Identificamos: <strong>Ensayo Funcional › Citotoxicidad</strong>. ¿Para qué células o diana?`;
+        } else if (subtype.id === "citoquinas") {
+          questionText = `Identificamos: <strong>Ensayo Funcional › Producción de citoquinas</strong>. ¿Qué citoquina querés medir?`;
+        } else if (subtype.id === "degranulacion") {
+          questionText = `Identificamos: <strong>Ensayo Funcional › Degranulación</strong>. ¿Con qué estímulo o marcador?`;
+        } else if (subtype.id === "via-interferon") {
+          questionText = `Identificamos: <strong>Ensayo Funcional › Vía del Interferón</strong>. ¿Para qué gen específico?`;
+        }
+      } else {
+        questionText = `Identificamos que querés solicitar un estudio de <strong>${type.label}${subtypeDisplay}</strong>. ¿Para qué target o analito específico querés realizarlo?`;
+      }
     }
 
     const placeholder = subtype ? subtype.placeholder : (type.placeholder || "Ej: BTK...");
     formFieldsHTML = `
       <div class="input-group" style="margin-bottom: 0.75rem;">
-        <label for="followup-target" style="display:block;font-size:0.8rem;color:var(--text-secondary);margin-bottom:0.3rem;">Especificación de la consulta</label>
+        <label for="followup-target" style="display:block;font-size:0.8rem;color:var(--text-secondary);margin-bottom:0.3rem;">${t("followup_label_spec")}</label>
         <input type="text" id="followup-target" class="free-query-input" style="width:100%;" placeholder="${placeholder}" autocomplete="off" spellcheck="false">
       </div>
     `;
   }
 
+  const secLabel = parsed.secondaryTypes && parsed.secondaryTypes[0] ? (typeof translateLabel === "function" ? translateLabel(parsed.secondaryTypes[0].label) : parsed.secondaryTypes[0].label) : "";
   const secWarning = (parsed.secondaryTypes && parsed.secondaryTypes.length > 0)
-    ? `<p style="font-size:0.75rem;color:#f59e0b;margin-top:0.5rem;font-weight:600;">⚠️ También detectamos una consulta para '${parsed.secondaryTypes[0].label}'. Podés solicitarla después de confirmar esta.</p>`
+    ? `<p style="font-size:0.75rem;color:#f59e0b;margin-top:0.5rem;font-weight:600;">${t("sec_query_warning", { label: secLabel })}</p>`
     : "";
 
   resultDiv.innerHTML = `
     <div class="free-parse-card followup">
-      <div class="parse-card-title">🔍 Consulta incompleta</div>
+      <div class="parse-card-title">${t("parse_card_incomplete_title")}</div>
       <div class="parse-card-body">
         <p style="margin-bottom: 0.75rem; font-size: 0.85rem; line-height: 1.4; color: var(--text-primary);">${questionText}</p>
         <form id="followup-form">
           ${formFieldsHTML}
           <div class="parse-actions" style="margin-top: 1rem;">
-            <button type="submit" class="btn-parse-continue">Continuar →</button>
-            <button type="button" class="btn-parse-cancel" id="btn-cancel-followup">✗ Cancelar</button>
+            <button type="submit" class="btn-parse-continue">${t("btn_continue")}</button>
+            <button type="button" class="btn-parse-cancel" id="btn-cancel-followup">${t("btn_cancel")}</button>
           </div>
         </form>
       </div>
-      <p style="font-size:0.75rem;color:var(--text-muted);margin-top:0.5rem;">⚡ No se consume ningún token en esta etapa.</p>
+      <p style="font-size:0.75rem;color:var(--text-muted);margin-top:0.5rem;">${t("no_token_spent")}</p>
       ${secWarning}
     </div>
   `;
@@ -761,7 +949,7 @@ function showFreeQueryFollowup(parsed) {
     }
 
     if (!targetVal && !type.fixed) {
-      showToast("⚠️ Por favor ingresá una especificación", "warning");
+      showToast(t("followup_toast_req"), "warning");
       return;
     }
 
@@ -779,32 +967,36 @@ function showConfirmationCardFromPending() {
   const { type, subtype, target, rawQuery } = pendingFreeQuery;
   const resultDiv = document.getElementById("free-query-result");
 
-  const subtypeDisplay = subtype ? ` › ${subtype.label}` : "";
+  const subtypeTr = subtype ? (typeof translateLabel === "function" ? translateLabel(subtype.label) : subtype.label) : "";
+  const subtypeDisplay = subtypeTr ? ` › ${subtypeTr}` : "";
+  const typeTr = typeof translateLabel === "function" ? translateLabel(type.label) : type.label;
+  const targetTr = typeof translateLabel === "function" ? translateLabel(target) : target;
   const hasTarget = !type.fixed && target;
 
   const targets = splitTargets(type.id, target);
   const cost = targets.length;
 
+  const secLabel = pendingFreeQuery.secondaryTypes && pendingFreeQuery.secondaryTypes[0] ? (typeof translateLabel === "function" ? translateLabel(pendingFreeQuery.secondaryTypes[0].label) : pendingFreeQuery.secondaryTypes[0].label) : "";
   const secWarning = (pendingFreeQuery.secondaryTypes && pendingFreeQuery.secondaryTypes.length > 0)
-    ? `<p style="font-size:0.75rem;color:#f59e0b;margin-top:0.5rem;font-weight:600;">⚠️ También detectamos una consulta para '${pendingFreeQuery.secondaryTypes[0].label}'. Podés solicitarla después de confirmar esta.</p>`
+    ? `<p style="font-size:0.75rem;color:#f59e0b;margin-top:0.5rem;font-weight:600;">${t("sec_query_warning", { label: secLabel })}</p>`
     : "";
 
   resultDiv.innerHTML = `
     <div class="free-parse-card confirm">
-      <div class="parse-card-title">🎯 Interpretación de tu consulta</div>
+      <div class="parse-card-title">${t("parse_card_confirm_title")}</div>
       <div class="parse-card-body">
         <div class="parse-row">
-          <span class="parse-label">Tipo de estudio:</span>
-          <span class="parse-value">${type.icon} ${type.label}${subtypeDisplay}</span>
+          <span class="parse-label">${t("parse_card_study_type")}</span>
+          <span class="parse-value">${type.icon} ${typeTr}${subtypeDisplay}</span>
         </div>
         ${hasTarget ? `<div class="parse-row">
-          <span class="parse-label">Consulta específica:</span>
-          <span class="parse-value parse-target">${target}</span>
+          <span class="parse-label">${t("parse_card_specific")}</span>
+          <span class="parse-value parse-target">${targetTr}</span>
         </div>` : ""}
       </div>
       <div class="parse-actions">
-        <button class="btn-parse-confirm" id="btn-confirm-query">✓ Confirmar y solicitar <span style="font-size:0.75rem;opacity:0.7">−${cost} token${cost > 1 ? 's' : ''}</span></button>
-        <button class="btn-parse-cancel" id="btn-cancel-query">✗ Cancelar</button>
+        <button class="btn-parse-confirm" id="btn-confirm-query">${t("btn_confirm_study")} <span style="font-size:0.75rem;opacity:0.7">−${cost} token${cost > 1 ? 's' : ''}</span></button>
+        <button class="btn-parse-cancel" id="btn-cancel-query">${t("btn_cancel")}</button>
       </div>
       ${secWarning}
     </div>`;
@@ -844,7 +1036,8 @@ function renderStudyPanel() {
     const tab = document.createElement("button");
     tab.className = "study-tab" + (i === 0 ? " active" : "");
     tab.dataset.tab = type.id;
-    tab.innerHTML = `<span>${type.icon}</span><span>${type.label}</span>`;
+    const tabLabelTr = typeof translateLabel === "function" ? translateLabel(type.label) : type.label;
+    tab.innerHTML = `<span>${type.icon}</span><span>${tabLabelTr}</span>`;
     tab.style.setProperty("--tab-color", type.color);
     tab.addEventListener("click", () => switchTab(type.id));
     tabsContainer.appendChild(tab);
@@ -868,42 +1061,51 @@ function renderStudyPanel() {
 
 function buildStudyForm(type) {
   let inputField = "";
+  const isEn = typeof currentLang !== "undefined" && currentLang === "en";
+  const typeLabelTr = typeof translateLabel === "function" ? translateLabel(type.label) : type.label;
+  const btnRequestLabel = isEn ? `Order ${typeLabelTr}` : `Solicitar ${type.label}`;
 
   if (type.fixed) {
     inputField = `<input type="hidden" id="target-${type.id}" value="${type.fixedTarget}">`;
   } else if (type.hasSub) {
-    const subOptions = type.subtypes.map(s => `<option value="${s.id}" data-placeholder="${s.placeholder}">${s.label}</option>`).join("");
+    const subOptions = type.subtypes.map(s => {
+      const subLabelTr = typeof translateLabel === "function" ? translateLabel(s.label) : s.label;
+      return `<option value="${s.id}" data-placeholder="${s.placeholder}">${subLabelTr}</option>`;
+    }).join("");
     inputField = `
       <div class="input-group">
-        <label for="subtype-${type.id}">Tipo de ensayo</label>
+        <label for="subtype-${type.id}">${t("followup_label_assay")}</label>
         <select id="subtype-${type.id}" class="study-select" onchange="updateSubPlaceholder('${type.id}')">
           ${subOptions}
         </select>
       </div>
       <div class="input-group">
-        <label for="target-${type.id}">Estímulo / Target</label>
+        <label for="target-${type.id}">${t("followup_label_stimulus")}</label>
         <input type="text" id="target-${type.id}" placeholder="${type.subtypes[0].placeholder}" autocomplete="off" spellcheck="false">
       </div>`;
   } else {
+    const targetLabel = isEn ? "Target / Analyte" : "Target / Analito";
     inputField = `
       <div class="input-group">
-        <label for="target-${type.id}">Target / Analito</label>
+        <label for="target-${type.id}">${targetLabel}</label>
         <input type="text" id="target-${type.id}" placeholder="${type.placeholder}" autocomplete="off" spellcheck="false">
       </div>`;
   }
+
+  const descTr = typeof translateMedicalText === "function" ? translateMedicalText(type.description) : type.description;
 
   return `
     <div class="study-form-header">
       <span class="study-icon" style="color:${type.color}">${type.icon}</span>
       <div>
-        <h3>${type.label}</h3>
-        <p>${type.description}</p>
+        <h3>${typeLabelTr}</h3>
+        <p>${descTr}</p>
       </div>
     </div>
     <form id="form-${type.id}" class="study-form">
       ${inputField}
       <button type="submit" class="btn-request" style="--btn-color:${type.color}">
-        <span class="btn-icon">🔍</span> Solicitar ${type.label}
+        <span class="btn-icon">🔍</span> ${btnRequestLabel}
         <span class="token-cost">−1 token</span>
       </button>
     </form>`;
@@ -1114,26 +1316,36 @@ function renderHistory() {
   container.innerHTML = "";
 
   caseHistory.forEach((item, i) => {
-    const subtypeStr = item.subtype ? ` › ${item.subtype.label}` : "";
+    const translatedSubtype = item.subtype ? (typeof translateLabel === "function" ? translateLabel(item.subtype.label) : item.subtype.label) : "";
+    const subtypeStr = translatedSubtype ? ` › ${translatedSubtype}` : "";
+    const translatedStudyName = typeof translateLabel === "function" ? translateLabel(item.type.label) : item.type.label;
+    const translatedTarget = typeof translateLabel === "function" ? translateLabel(item.target) : item.target;
+
     const card = document.createElement("div");
     card.className = `result-card ${item.found ? "found" : "not-found"} ${i === 0 ? "new" : ""}`;
+    const statusText = item.found 
+      ? (typeof t === "function" ? t("status_found") : "✓ Disponible")
+      : (typeof t === "function" ? t("status_missing") : "✗ No disponible");
+    const tokensLeftLabel = typeof t === "function" ? t("tokens_left") : "Tokens restantes";
+    const translatedText = typeof translateMedicalText === "function" ? translateMedicalText(item.result) : item.result;
+
     card.innerHTML = `
       <div class="result-card-header">
         <div class="result-meta">
           <span class="result-study-icon" style="color:${item.type.color}">${item.type.icon}</span>
-          <span class="result-study-name">${item.type.label}${subtypeStr}</span>
-          <span class="result-target">${item.target}</span>
+          <span class="result-study-name">${translatedStudyName}${subtypeStr}</span>
+          <span class="result-target">${translatedTarget}</span>
         </div>
         <div class="result-status ${item.found ? "status-found" : "status-missing"}">
-          ${item.found ? "✓ Disponible" : "✗ No disponible"}
+          ${statusText}
         </div>
       </div>
       <div class="result-body">
-        <pre class="result-text">${item.result}</pre>
+        <pre class="result-text">${translatedText}</pre>
       </div>
       <div class="result-footer">
         <span class="result-case">${examCases.find(c => c.id === item.caseId)?.name || currentCase?.name || ""}</span>
-        <span class="result-time">${formatTime(item.time)} · Tokens restantes: ${item.tokensLeft}</span>
+        <span class="result-time">${formatTime(item.time)} · ${tokensLeftLabel}: ${item.tokensLeft}</span>
       </div>`;
     container.appendChild(card);
   });
@@ -1150,9 +1362,14 @@ function formatTime(d) {
 function showProcessing(type, subtype, target, callback) {
   const overlay = document.getElementById("processing-overlay");
   const label = document.getElementById("processing-label");
-  const subtypeStr = subtype ? ` › ${subtype.label}` : "";
-  const targetStr = (type.fixed || !target) ? "" : ` — ${target}`;
-  label.textContent = `Procesando ${type.label}${subtypeStr}${targetStr}...`;
+  const isEn = typeof currentLang !== "undefined" && currentLang === "en";
+  const procLabel = isEn ? "Processing" : "Procesando";
+  const typeLabelTr = typeof translateLabel === "function" ? translateLabel(type.label) : type.label;
+  const subtypeLabelTr = subtype ? (typeof translateLabel === "function" ? translateLabel(subtype.label) : subtype.label) : "";
+  const subtypeStr = subtypeLabelTr ? ` › ${subtypeLabelTr}` : "";
+  const targetTr = target ? (typeof translateLabel === "function" ? translateLabel(target) : target) : "";
+  const targetStr = (type.fixed || !targetTr) ? "" : ` — ${targetTr}`;
+  label.textContent = `${procLabel} ${typeLabelTr}${subtypeStr}${targetStr}...`;
   overlay.classList.add("visible");
   setTimeout(() => { overlay.classList.remove("visible"); callback(); }, 1200);
 }
@@ -1178,4 +1395,16 @@ function showToast(msg, type = "info") {
 document.addEventListener("DOMContentLoaded", () => {
   const btn = document.getElementById("logout-btn");
   if (btn) btn.addEventListener("click", () => { clearSession(); window.location.href = "index.html"; });
+
+  window.addEventListener("languageChanged", () => {
+    renderCaseSelector();
+    if (currentCase) {
+      document.getElementById("current-case-name").textContent = typeof translateMedicalText === "function" ? translateMedicalText(currentCase.name) : currentCase.name;
+      renderCaseInfoBanner(currentCase);
+      renderHistory();
+      if (queryMode !== "guided") renderFreeQueryBar();
+      if (queryMode !== "free") renderStudyPanel();
+    }
+    renderHeader();
+  });
 });

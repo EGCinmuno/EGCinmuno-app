@@ -18,15 +18,17 @@
 
 <body>
 
-  <button class="btn-theme-toggle" id="theme-toggle-btn" style="position:fixed; top:1.5rem; right:1.5rem; z-index:1000;"
-    title="Cambiar tema">🌓</button>
+  <div style="position:fixed; top:1.5rem; right:1.5rem; z-index:1000; display:flex; gap:0.5rem; align-items:center;">
+    <button class="btn-lang-toggle" id="lang-toggle-btn" title="Cambiar idioma"><span>🇪🇸 ES</span></button>
+    <button class="btn-theme-toggle" id="theme-toggle-btn" title="Cambiar tema">🌓</button>
+  </div>
 
   <main class="login-page">
     <div class="login-card">
       <div class="login-brand">
         <span class="login-logo">🧬</span>
-        <h1>EGC-Inmuno</h1>
-        <p>Consulta y Laboratorio Virtual</p>
+        <h1 data-i18n="title_app">EGC-Inmuno</h1>
+        <p data-i18n="subtitle_app">Consulta y Laboratorio Virtual</p>
       </div>
 
       <form class="login-form" id="login-form">
@@ -53,6 +55,7 @@
   <script src="js/supabase-config.js"></script>
   <script src="js/cases.js"></script>
   <script src="js/data.js"></script>
+  <script src="js/i18n.js"></script>
   <script src="js/auth.js"></script>
   <script>
     document.addEventListener("DOMContentLoaded", () => {

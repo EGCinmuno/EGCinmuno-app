@@ -17,7 +17,10 @@ const STUDY_TYPES = [
     color: "#64748b",
     description: "Datos generales, edad, género, inicio de síntomas",
     placeholder: "Ej: edad y género, inicio de síntomas, historia clínica...",
-    keywords: ["informacion", "información", "paciente", "edad", "genero", "género", "sexo", "datos", "ficha", "inicio", "sintoma", "síntoma", "comienzo", "cuando", "cuándo", "historia clinica", "hc", "motivo", "consulta", "infeccion", "infecciones"]
+    keywords: [
+      "informacion", "información", "paciente", "edad", "genero", "género", "sexo", "datos", "ficha", "inicio", "sintoma", "síntoma", "comienzo", "cuando", "cuándo", "historia clinica", "hc", "motivo", "consulta", "infeccion", "infecciones",
+      "patient", "information", "info", "age", "gender", "sex", "symptom", "symptoms", "onset", "presentation", "chief complaint", "reason for consultation", "complaint", "clinical history", "infection", "infections"
+    ]
   },
   {
     id: "antecedentes",
@@ -26,7 +29,10 @@ const STUDY_TYPES = [
     color: "#ec4899",
     description: "Historia familiar: parentales, hermanos o abuelos/tíos",
     placeholder: "Ej: abuelos/tíos, parentales, hermanos/hermanas...",
-    keywords: ["antecedente", "familiar", "familia", "historia", "anamnesis", "hereditario", "hereditaria", "padres", "parentales", "hermano", "hermana", "siblings", "abuelo", "abuela", "abuelos", "tío", "tía", "tio", "tia", "tíos", "tias", "tios"]
+    keywords: [
+      "antecedente", "familiar", "familia", "historia", "anamnesis", "hereditario", "hereditaria", "padres", "parentales", "hermano", "hermana", "siblings", "abuelo", "abuela", "abuelos", "tío", "tía", "tio", "tia", "tíos", "tias", "tios",
+      "family", "history", "pedigree", "parents", "father", "mother", "brother", "sister", "siblings", "grandparents", "grandfather", "grandmother", "uncle", "aunt", "uncles", "aunts", "consanguinity", "consanguineous", "hereditary", "pedigree"
+    ]
   },
   {
     id: "western-blot",
@@ -35,7 +41,10 @@ const STUDY_TYPES = [
     color: "#6366f1",
     placeholder: "Ej: BTK, p53, WASp, STAT1, JAK3...",
     description: "Detección de proteína específica por electroforesis e inmunotransferencia",
-    keywords: ["western", "blot", "wb", "inmunotransferencia", "proteina", "proteína", "proteinas", "proteínas", "banda", "bandas"]
+    keywords: [
+      "western", "blot", "wb", "inmunotransferencia", "proteina", "proteína", "proteinas", "proteínas", "banda", "bandas",
+      "immunoblot", "protein", "proteins", "band", "bands", "blotting"
+    ]
   },
   {
     id: "hemograma",
@@ -45,7 +54,10 @@ const STUDY_TYPES = [
     description: "Análisis cuantitativo de células sanguíneas",
     fixed: true,
     fixedTarget: "completo",
-    keywords: ["hemograma", "sangre", "cbc", "hematologia", "hematología", "formula", "fórmula", "leucocitos", "eritrocitos", "plaquetas"]
+    keywords: [
+      "hemograma", "sangre", "cbc", "hematologia", "hematología", "formula", "fórmula", "leucocitos", "eritrocitos", "plaquetas",
+      "complete blood count", "blood count", "blood test", "white blood cells", "wbc", "rbc", "platelets", "leukocytes", "hemogram"
+    ]
   },
   {
     id: "citometria",
@@ -54,8 +66,14 @@ const STUDY_TYPES = [
     color: "#8b5cf6",
     placeholder: "Ej: CD19 B cells, CD4 T cells, CD5 CD19...",
     description: "Análisis de subpoblaciones leucocitarias por marcadores de superficie",
-    keywords: ["citometria", "citometría", "citometrias", "flujo", "flow", "facs", "cd4", "cd8", "cd19", "cd3", "poblacion", "población", "poblaciones", "linfocitaria", "linfocitarias", "subpoblacion", "subpoblación", "subpoblaciones", "subpoblaciones linfocitarias", "marcador", "marcadores", "fenotipo", "fenotipos"],
-    indicators: ["citometria", "citometría", "citometrias", "flujo", "flow", "facs", "subpoblacion", "subpoblación", "subpoblaciones", "marcador", "marcadores", "fenotipo", "fenotipos"]
+    keywords: [
+      "citometria", "citometría", "citometrias", "flujo", "flow", "facs", "cd4", "cd8", "cd19", "cd3", "poblacion", "población", "poblaciones", "linfocitaria", "linfocitarias", "subpoblacion", "subpoblación", "subpoblaciones", "subpoblaciones linfocitarias", "marcador", "marcadores", "fenotipo", "fenotipos",
+      "flow cytometry", "cytometry", "subsets", "lymphocyte subsets", "populations", "surface markers", "markers", "phenotype", "t cells", "b cells", "nk cells"
+    ],
+    indicators: [
+      "citometria", "citometría", "citometrias", "flujo", "flow", "facs", "subpoblacion", "subpoblación", "subpoblaciones", "marcador", "marcadores", "fenotipo", "fenotipos",
+      "flow cytometry", "cytometry", "subsets", "markers"
+    ]
   },
   {
     id: "elisa",
@@ -64,8 +82,14 @@ const STUDY_TYPES = [
     color: "#10b981",
     placeholder: "Ej: IgG, IgM, IgA, IgE, IL-6, TNF-α...",
     description: "Cuantificación de inmunoglobulinas, citoquinas y proteínas séricas",
-    keywords: ["elisa", "dosaje", "dosajes", "dosage", "inmunoglobulina", "inmunoglobulinas", "IgG", "IgM", "IgA", "IgE", "IgD", "igg", "igm", "iga", "ige", "igd", "inmuno", "serico", "sérico", "cuantificacion", "cuantificación"],
-    indicators: ["elisa", "dosaje", "dosajes", "dosage", "inmunoglobulina", "inmunoglobulinas", "anticuerpo", "anticuerpos", "inmuno", "serico", "sérico", "cuantificacion", "cuantificación"]
+    keywords: [
+      "elisa", "dosaje", "dosajes", "dosage", "inmunoglobulina", "inmunoglobulinas", "IgG", "IgM", "IgA", "IgE", "IgD", "igg", "igm", "iga", "ige", "igd", "inmuno", "serico", "sérico", "cuantificacion", "cuantificación",
+      "quantification", "immunoglobulins", "antibodies", "serum", "cytokines", "titers", "levels"
+    ],
+    indicators: [
+      "elisa", "dosaje", "dosajes", "dosage", "inmunoglobulina", "inmunoglobulinas", "anticuerpo", "anticuerpos", "inmuno", "serico", "sérico", "cuantificacion", "cuantificación",
+      "quantification", "dosage", "immunoglobulins", "antibodies"
+    ]
   },
   {
     id: "pcr",
@@ -74,7 +98,10 @@ const STUDY_TYPES = [
     color: "#f59e0b",
     placeholder: "Ej: BTK mRNA, WAS mRNA, JAK3...",
     description: "Detección y cuantificación de transcriptos génicos",
-    keywords: ["sanger", "Sanger", "pcr", "rtpcr", "rt-pcr", "mrna", "transcripto", "transcriptos", "amplificacion", "amplificación", "gen", "genes", "expresion", "expresión"]
+    keywords: [
+      "sanger", "Sanger", "pcr", "rtpcr", "rt-pcr", "mrna", "transcripto", "transcriptos", "amplificacion", "amplificación", "gen", "genes", "expresion", "expresión",
+      "sequencing", "transcript", "transcripts", "gene", "genes", "expression", "mrna expression"
+    ]
   },
   {
     id: "interconsulta",
@@ -83,8 +110,14 @@ const STUDY_TYPES = [
     color: "#eeca8c",
     placeholder: "Ej: Dermatología, Neurología, Gastroenterología, Cardiología, Neumonología...",
     description: "Consulta médica o derivación a otras especialidades",
-    keywords: ["interconsulta", "interconsultas", "consulta", "consultas", "especialista", "especialistas", "derivacion", "derivación", "especialidad", "medica", "médica", "medico", "médico", "medicos", "médicos", "neurologia", "neurología", "neuro", "convulsion", "musculo", "músculo", "gastrointestinal", "gastroenterologia", "gastroenterología", "gastro", "intestin", "diarrea", "estomago", "estómago", "dermatologia", "dermatología", "dermato", "piel", "eccema", "dermatitis", "cardiologia", "cardiología", "cardio", "corazon", "corazón", "soplo", "neumonologia", "neumonología", "neumonología", "neumo", "pulmon", "respirat", "hematologia", "hematología", "infectologia", "infectología", "infecto"],
-    indicators: ["interconsulta", "interconsultas", "consulta", "consultas", "especialista", "especialistas", "derivacion", "derivación", "pedir", "solicitar", "evaluacion", "evaluación"]
+    keywords: [
+      "interconsulta", "interconsultas", "consulta", "consultas", "especialista", "especialistas", "derivacion", "derivación", "especialidad", "medica", "médica", "medico", "médico", "medicos", "médicos", "neurologia", "neurología", "neuro", "convulsion", "musculo", "músculo", "gastrointestinal", "gastroenterologia", "gastroenterología", "gastro", "intestin", "diarrea", "estomago", "estómago", "dermatologia", "dermatología", "dermato", "piel", "eccema", "dermatitis", "cardiologia", "cardiología", "cardio", "corazon", "corazón", "soplo", "neumonologia", "neumonología", "neumonología", "neumo", "pulmon", "respirat", "hematologia", "hematología", "infectologia", "infectología", "infecto",
+      "consultation", "referral", "specialist", "specialty", "dermatology", "neurology", "gastroenterology", "cardiology", "pulmonology", "infectious", "skin", "eczema", "seizures", "heart", "lungs", "diarrhea"
+    ],
+    indicators: [
+      "interconsulta", "interconsultas", "consulta", "consultas", "especialista", "especialistas", "derivacion", "derivación", "pedir", "solicitar", "evaluacion", "evaluación",
+      "consultation", "referral", "evaluation", "specialist"
+    ]
   },
   {
     id: "autoanticuerpos",
@@ -94,8 +127,14 @@ const STUDY_TYPES = [
     description: "Detección de anticuerpos asociados a patologías autoinmunes",
     fixed: true,
     fixedTarget: "completo",
-    keywords: ["autoanticuerpo", "autoanticuerpos", "autoinmune", "autoinmunidad", "ana", "fan", "anti-dna", "antidna", "anca", "anti-sm", "antism", "anti-ro", "anti-la", "lupus", "artritis", "factor reumatoideo"],
-    indicators: ["autoanticuerpo", "autoanticuerpos", "autoinmune", "autoinmunidad", "deteccion", "detección", "presencia"]
+    keywords: [
+      "autoanticuerpo", "autoanticuerpos", "autoinmune", "autoinmunidad", "ana", "fan", "anti-dna", "antidna", "anca", "anti-sm", "antism", "anti-ro", "anti-la", "lupus", "artritis", "factor reumatoideo",
+      "autoantibody", "autoantibodies", "autoimmune", "autoimmunity", "rheumatoid factor", "antinuclear"
+    ],
+    indicators: [
+      "autoanticuerpo", "autoanticuerpos", "autoinmune", "autoinmunidad", "deteccion", "detección", "presencia",
+      "autoantibodies", "autoimmune"
+    ]
   },
   {
     id: "vacuna",
@@ -104,8 +143,14 @@ const STUDY_TYPES = [
     color: "#06b6d4",
     placeholder: "Ej: Tétanos, Neumococo, Hepatitis B, Difteria...",
     description: "Títulos de anticuerpos pre/post vacunación y evaluación de respuesta protectora",
-    keywords: ["vacuna", "vacunas", "vacunacion", "vacunación", "vacunaciones", "titulo", "título", "titulos", "títulos", "inmunizacion", "inmunización", "tetanos", "tétanos", "neumococo", "hepatitis", "difteria"],
-    indicators: ["vacuna", "vacunas", "vacunacion", "vacunación", "vacunaciones", "titulo", "título", "titulos", "títulos", "inmunizacion", "inmunización"]
+    keywords: [
+      "vacuna", "vacunas", "vacunacion", "vacunación", "vacunaciones", "titulo", "título", "titulos", "títulos", "inmunizacion", "inmunización", "tetanos", "tétanos", "neumococo", "hepatitis", "difteria",
+      "vaccine", "vaccines", "vaccination", "immunization", "titers", "tetanus", "pneumococcal", "diphtheria", "hepatitis"
+    ],
+    indicators: [
+      "vacuna", "vacunas", "vacunacion", "vacunación", "vacunaciones", "titulo", "título", "titulos", "títulos", "inmunizacion", "inmunización",
+      "vaccine", "vaccination", "titers"
+    ]
   },
   {
     id: "segregacion",
@@ -114,7 +159,10 @@ const STUDY_TYPES = [
     color: "#84cc16",
     placeholder: "Ej: BTK, WAS, RAG1, DOCK8...",
     description: "Análisis de segregación del gen en los miembros de la familia (portadores/afectados)",
-    keywords: ["segregacion", "segregación", "arbol", "árbol", "genealogico", "genealógico", "portador", "portadora", "herencia", "ligado"]
+    keywords: [
+      "segregacion", "segregación", "arbol", "árbol", "genealogico", "genealógico", "portador", "portadora", "herencia", "ligado",
+      "segregation", "family segregation", "carrier", "pedigree", "inheritance", "x-linked"
+    ]
   },
   {
     id: "funcional",
@@ -129,39 +177,39 @@ const STUDY_TYPES = [
         id: "proliferacion",
         label: "Proliferación celular",
         placeholder: "Ej: PHA, anti-CD3, PWM, PMA+ionomicina",
-        keywords: ["proliferacion", "proliferación", "proliferar", "pha", "timidina", "ki67", "cfse", "division", "división"],
-        indicators: ["proliferacion", "proliferación", "proliferar", "timidina", "ki67", "cfse", "division", "división"]
+        keywords: ["proliferacion", "proliferación", "proliferar", "pha", "timidina", "ki67", "cfse", "division", "división", "proliferation", "proliferative", "thymidine"],
+        indicators: ["proliferacion", "proliferación", "proliferar", "timidina", "ki67", "cfse", "division", "división", "proliferation"]
       },
       {
         id: "citotoxicidad",
         label: "Citotoxicidad",
         placeholder: "Ej: NK, CTL, célula diana K562",
-        keywords: ["citotoxicidad", "citotóxico", "citotoxica", "nk", "ctl", "lisis", "killing"],
-        indicators: ["citotoxicidad", "citotóxico", "citotoxica", "lisis", "killing"]
+        keywords: ["citotoxicidad", "citotóxico", "citotoxica", "nk", "ctl", "lisis", "killing", "cytotoxicity", "cytotoxic", "lysis"],
+        indicators: ["citotoxicidad", "citotóxico", "citotoxica", "lisis", "killing", "cytotoxicity"]
       },
       {
         id: "citoquinas",
         label: "Producción de citoquinas",
         placeholder: "Ej: IL-2, IFN-γ, TNF-α, IL-10...",
-        keywords: ["citoquina", "citocina", "citokina", "il-2", "il2", "ifn", "interferon", "interferón", "tnf", "interleucina"],
-        indicators: ["citoquina", "citocina", "citokina", "interleucina"]
+        keywords: ["citoquina", "citocina", "citokina", "il-2", "il2", "ifn", "interferon", "interferón", "tnf", "interleucina", "cytokine", "cytokines", "interleukin"],
+        indicators: ["citoquina", "citocina", "citokina", "interleucina", "cytokine", "cytokines"]
       },
       {
         id: "degranulacion",
         label: "Degranulación",
         placeholder: "Ej: CD107a (NK), perforina, granzima",
-        keywords: ["degranulacion", "degranulación", "cd107", "perforina", "granzima", "granzyme"],
-        indicators: ["degranulacion", "degranulación", "perforina", "granzima", "granzyme"]
+        keywords: ["degranulacion", "degranulación", "cd107", "perforina", "granzima", "granzyme", "degranulation", "perforin"],
+        indicators: ["degranulacion", "degranulación", "perforina", "granzima", "granzyme", "degranulation"]
       },
       {
         id: "via-interferon",
         label: "Vía del Interferón (gen específico)",
         placeholder: "Ej: STAT1, IRF3, IRF7, MX1, IFNAR1...",
-        keywords: ["via interferon", "vía interferón", "signaling", "señalizacion", "stat1", "irf3", "irf7", "mx1", "ifnar", "sting", "jak1", "tyk2"],
-        indicators: ["via interferon", "vía interferón", "signaling", "señalizacion"]
+        keywords: ["via interferon", "vía interferón", "signaling", "señalizacion", "stat1", "irf3", "irf7", "mx1", "ifnar", "sting", "jak1", "tyk2", "interferon pathway"],
+        indicators: ["via interferon", "vía interferón", "signaling", "señalizacion", "interferon pathway"]
       }
     ],
-    keywords: ["funcional", "ensayo", "proliferacion", "proliferación", "citotoxicidad", "citoquina", "citocina", "degranulacion", "degranulación", "interferon", "interferón", "via del interferon"]
+    keywords: ["funcional", "ensayo", "proliferacion", "proliferación", "citotoxicidad", "citoquina", "citocina", "degranulacion", "degranulación", "interferon", "interferón", "via del interferon", "functional", "assay", "assays"]
   },
   {
     id: "ecografia",
@@ -171,7 +219,7 @@ const STUDY_TYPES = [
     description: "Evaluación ecográfica de órganos abdominales (bazo, hígado, etc.)",
     fixed: true,
     fixedTarget: "completa",
-    keywords: ["ecografia", "ecografía", "ultrasonido", "bazo", "esplenomegalia", "higado", "hígado", "hepatomegalia", "abdominal", "ecografía abdominal", "ecografia abdominal"]
+    keywords: ["ecografia", "ecografía", "ultrasonido", "bazo", "esplenomegalia", "higado", "hígado", "hepatomegalia", "abdominal", "ecografía abdominal", "ecografia abdominal", "ultrasound", "abdominal ultrasound", "sonogram", "spleen", "liver"]
   },
   {
     id: "tomografia",
@@ -181,7 +229,7 @@ const STUDY_TYPES = [
     description: "Tomografía computada de alta resolución (tórax, abdomen, etc.)",
     fixed: true,
     fixedTarget: "de tórax",
-    keywords: ["tomografia", "tomografía", "tc", "tac", "tcar", "hrct", "tomografía computada", "tomografia de torax", "tomografia de tórax", "glild", "pulmon", "pulmón", "pulmonar"]
+    keywords: ["tomografia", "tomografía", "tc", "tac", "tcar", "hrct", "tomografía computada", "tomografia de torax", "tomografia de tórax", "glild", "pulmon", "pulmón", "pulmonar", "ct", "computed tomography", "chest ct", "hrct", "lungs", "chest"]
   }
 ];
 
@@ -380,44 +428,44 @@ function parseNaturalQuery(text) {
 
   // 4. Mapeo específico de targets según el tipo de estudio
   if (detectedType.id === "info-paciente") {
-    if (normalized.includes("inicio") || normalized.includes("sintoma") || normalized.includes("comienzo")) {
+    if (normalized.includes("inicio") || normalized.includes("sintoma") || normalized.includes("comienzo") || normalized.includes("onset") || normalized.includes("presentation") || normalized.includes("start")) {
       target = "inicio de síntomas";
-    } else if (normalized.includes("motivo") || normalized.includes("consulta")) {
+    } else if (normalized.includes("motivo") || normalized.includes("consulta") || normalized.includes("complaint") || normalized.includes("reason")) {
       target = "motivo de consulta";
     } else if (
-      normalized.includes("infeccion") || normalized.includes("infecciones") ||
-      normalized.includes("bacteria") || normalized.includes("cultivo") ||
-      normalized.includes("germen") || normalized.includes("gérmenes") ||
+      normalized.includes("infeccion") || normalized.includes("infecciones") || normalized.includes("infection") || normalized.includes("infections") ||
+      normalized.includes("bacteria") || normalized.includes("cultivo") || normalized.includes("culture") ||
+      normalized.includes("germen") || normalized.includes("gérmenes") || normalized.includes("germ") ||
       normalized.includes("rescata") || normalized.includes("rescate") ||
-      normalized.includes("hospitaliz") || normalized.includes("internac") ||
-      normalized.includes("terapia")
+      normalized.includes("hospitaliz") || normalized.includes("internac") || normalized.includes("hospital") ||
+      normalized.includes("terapia") || normalized.includes("icu")
     ) {
       target = "infecciones";
-    } else if (normalized.includes("edad") || normalized.includes("genero") || normalized.includes("sexo") || normalized.includes("años")) {
+    } else if (normalized.includes("edad") || normalized.includes("genero") || normalized.includes("sexo") || normalized.includes("años") || normalized.includes("age") || normalized.includes("gender") || normalized.includes("sex") || normalized.includes("years")) {
       target = "edad y género";
     } else {
       target = "general";
     }
   } else if (detectedType.id === "antecedentes") {
-    if (normalized.includes("padre") || normalized.includes("madre") || normalized.includes("parental") || normalized.includes("consanguin")) {
+    if (normalized.includes("padre") || normalized.includes("madre") || normalized.includes("parental") || normalized.includes("consanguin") || normalized.includes("father") || normalized.includes("mother") || normalized.includes("parents")) {
       target = "parentales";
-    } else if (normalized.includes("herman") || normalized.includes("sibling")) {
+    } else if (normalized.includes("herman") || normalized.includes("sibling") || normalized.includes("brother") || normalized.includes("sister")) {
       target = "hermanos";
     } else {
       target = "abuelos/tíos";
     }
   } else if (detectedType.id === "interconsulta") {
-    if (normalized.includes("dermato") || normalized.includes("piel") || normalized.includes("eccema") || normalized.includes("dermatitis")) {
+    if (normalized.includes("dermato") || normalized.includes("piel") || normalized.includes("eccema") || normalized.includes("dermatitis") || normalized.includes("skin") || normalized.includes("eczema")) {
       target = "Dermatología";
-    } else if (normalized.includes("neuro") || normalized.includes("convulsion") || normalized.includes("convulsión") || normalized.includes("sindrómico") || normalized.includes("sindromico") || normalized.includes("retraso motor") || normalized.includes("retraso desarrollo") || normalized.includes("retraso") || normalized.includes("musculo") || normalized.includes("músculo")) {
+    } else if (normalized.includes("neuro") || normalized.includes("convulsion") || normalized.includes("convulsión") || normalized.includes("seizure") || normalized.includes("sindrómico") || normalized.includes("sindromico") || normalized.includes("retraso motor") || normalized.includes("retraso desarrollo") || normalized.includes("retraso") || normalized.includes("musculo") || normalized.includes("músculo") || normalized.includes("muscle")) {
       target = "Neurología";
-    } else if (normalized.includes("gastro") || normalized.includes("intestin") || normalized.includes("diarrea") || normalized.includes("estomago") || normalized.includes("estómago")) {
+    } else if (normalized.includes("gastro") || normalized.includes("intestin") || normalized.includes("diarrea") || normalized.includes("estomago") || normalized.includes("estómago") || normalized.includes("diarrhea") || normalized.includes("gut") || normalized.includes("bowel")) {
       target = "Gastrointestinal";
-    } else if (normalized.includes("cardio") || normalized.includes("corazon") || normalized.includes("corazón") || normalized.includes("soplo")) {
+    } else if (normalized.includes("cardio") || normalized.includes("corazon") || normalized.includes("corazón") || normalized.includes("soplo") || normalized.includes("heart") || normalized.includes("murmur")) {
       target = "Cardiología";
-    } else if (normalized.includes("neumonol") || normalized.includes("neumono") || normalized.includes("neumo") || normalized.includes("pulmon") || normalized.includes("respirat")) {
+    } else if (normalized.includes("neumonol") || normalized.includes("neumono") || normalized.includes("neumo") || normalized.includes("pulmon") || normalized.includes("respirat") || normalized.includes("pulmonology") || normalized.includes("lung") || normalized.includes("respiratory") || normalized.includes("cough")) {
       target = "Neumonología";
-    } else if (normalized.includes("infecto")) {
+    } else if (normalized.includes("infecto") || normalized.includes("infectious")) {
       target = "Infectología";
     } else {
       // Extraer target removiendo palabras de ruido para otros estudios
@@ -427,7 +475,9 @@ function parseNaturalQuery(text) {
         "quiero", "necesito", "solicito", "pedir", "pido", "ver", "hacer", "dame",
         "mostrame", "obtener", "traeme", "un", "una", "el", "la", "los", "las", "medir", "detectar",
         "de", "del", "para", "por", "resultado", "estudio", "analisis", "análisis",
-        "test", "hacer", "realizar", "pedir", "del", "gen", "proteina", "proteína"
+        "test", "hacer", "realizar", "pedir", "del", "gen", "proteina", "proteína",
+        "want", "need", "request", "order", "show", "give", "get", "check", "measure",
+        "assay", "results", "result", "level", "levels", "for", "to", "the", "a", "an", "of", "gene", "protein"
       ];
 
       const textWords = text.split(/\s+/);
@@ -445,7 +495,9 @@ function parseNaturalQuery(text) {
       "quiero", "necesito", "solicito", "pedir", "pido", "ver", "hacer", "dame",
       "mostrame", "obtener", "traeme", "un", "una", "el", "la", "los", "las",
       "de", "del", "para", "por", "resultado", "estudio", "analisis", "análisis",
-      "test", "hacer", "realizar", "pedir", "del", "gen", "proteina", "proteína"
+      "test", "hacer", "realizar", "pedir", "del", "gen", "proteina", "proteína",
+      "want", "need", "request", "order", "show", "give", "get", "check", "measure",
+      "assay", "results", "result", "level", "levels", "for", "to", "the", "a", "an", "of", "gene", "protein"
     ];
 
     const textWords = text.split(/\s+/);
