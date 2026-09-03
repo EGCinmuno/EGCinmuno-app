@@ -64,10 +64,14 @@ const STUDY_TYPES = [
     label: "Citometría de Flujo",
     icon: "⚗️",
     color: "#8b5cf6",
-    placeholder: "Ej: CD19 B cells, CD4 T cells, CD5 CD19...",
+    placeholder: "Ej: CD19 B cells, CD4 T cells, CD5 CD19, NK cells...",
     description: "Análisis de subpoblaciones leucocitarias por marcadores de superficie",
     keywords: [
-      "citometria", "citometría", "citometrias", "flujo", "flow", "facs", "cd4", "cd8", "cd19", "cd3", "poblacion", "población", "poblaciones", "linfocitaria", "linfocitarias", "subpoblacion", "subpoblación", "subpoblaciones", "subpoblaciones linfocitarias", "marcador", "marcadores", "fenotipo", "fenotipos",
+      "citometria", "citometría", "citometrias", "flujo", "flow", "facs",
+      "cd4", "cd8", "cd19", "cd20", "cd19/cd20", "cd20/cd19", "cd16", "cd56", "cd16/cd56", "cd56/cd16", "cd16/56", "cd56/16", "cd3", "cd5", "cd27", "cd38",
+      "poblacion", "población", "poblaciones", "linfocitaria", "linfocitarias", "subpoblacion", "subpoblación", "subpoblaciones", "subpoblaciones linfocitarias",
+      "linfocitos b", "linfocito b", "celulas b", "linfocitos t", "linfocito t", "celulas t", "nk", "natural killer", "celulas nk", "células nk",
+      "marcador", "marcadores", "fenotipo", "fenotipos",
       "flow cytometry", "cytometry", "subsets", "lymphocyte subsets", "populations", "surface markers", "markers", "phenotype", "t cells", "b cells", "nk cells"
     ],
     indicators: [
@@ -177,29 +181,36 @@ const STUDY_TYPES = [
         id: "proliferacion",
         label: "Proliferación celular",
         placeholder: "Ej: PHA, anti-CD3, PWM, PMA+ionomicina",
-        keywords: ["proliferacion", "proliferación", "proliferar", "pha", "timidina", "ki67", "cfse", "division", "división", "proliferation", "proliferative", "thymidine"],
-        indicators: ["proliferacion", "proliferación", "proliferar", "timidina", "ki67", "cfse", "division", "división", "proliferation"]
+        keywords: [
+          "proliferacion", "proliferaciones", "proliferación", "proliferaciones", "proliferar", "proliferativo", "proliferativa", "proliferativos", "proliferativas",
+          "pha", "timidina", "ki67", "cfse", "division", "división",
+          "proliferation", "proliferations", "proliferative", "thymidine"
+        ],
+        indicators: [
+          "proliferacion", "proliferaciones", "proliferación", "proliferaciones", "proliferar", "timidina", "ki67", "cfse", "division", "división",
+          "proliferation", "proliferations"
+        ]
       },
       {
         id: "citotoxicidad",
         label: "Citotoxicidad",
         placeholder: "Ej: NK, CTL, célula diana K562",
-        keywords: ["citotoxicidad", "citotóxico", "citotoxica", "nk", "ctl", "lisis", "killing", "cytotoxicity", "cytotoxic", "lysis"],
-        indicators: ["citotoxicidad", "citotóxico", "citotoxica", "lisis", "killing", "cytotoxicity"]
+        keywords: ["citotoxicidad", "citotoxicidades", "citotóxico", "citotoxica", "citotoxicos", "citotoxicas", "nk", "ctl", "lisis", "killing", "actividad litica", "actividad lítica", "cytotoxicity", "cytotoxic", "lysis"],
+        indicators: ["citotoxicidad", "citotoxicidades", "citotóxico", "citotoxica", "lisis", "killing", "cytotoxicity"]
       },
       {
         id: "citoquinas",
         label: "Producción de citoquinas",
         placeholder: "Ej: IL-2, IFN-γ, TNF-α, IL-10...",
-        keywords: ["citoquina", "citocina", "citokina", "il-2", "il2", "ifn", "interferon", "interferón", "tnf", "interleucina", "cytokine", "cytokines", "interleukin"],
-        indicators: ["citoquina", "citocina", "citokina", "interleucina", "cytokine", "cytokines"]
+        keywords: ["citoquina", "citoquinas", "citocina", "citocinas", "citokina", "citokinas", "il-2", "il2", "ifn", "interferon", "interferón", "tnf", "interleucina", "cytokine", "cytokines", "interleukin"],
+        indicators: ["citoquina", "citoquinas", "citocina", "citocinas", "citokina", "citokinas", "interleucina", "cytokine", "cytokines"]
       },
       {
         id: "degranulacion",
         label: "Degranulación",
         placeholder: "Ej: CD107a (NK), perforina, granzima",
-        keywords: ["degranulacion", "degranulación", "cd107", "perforina", "granzima", "granzyme", "degranulation", "perforin"],
-        indicators: ["degranulacion", "degranulación", "perforina", "granzima", "granzyme", "degranulation"]
+        keywords: ["degranulacion", "degranulaciones", "degranulación", "degranulaciones", "cd107", "perforina", "granzima", "granzyme", "degranulation", "perforin"],
+        indicators: ["degranulacion", "degranulaciones", "degranulación", "degranulaciones", "perforina", "granzima", "granzyme", "degranulation"]
       },
       {
         id: "via-interferon",
@@ -209,7 +220,13 @@ const STUDY_TYPES = [
         indicators: ["via interferon", "vía interferón", "signaling", "señalizacion", "interferon pathway"]
       }
     ],
-    keywords: ["funcional", "ensayo", "proliferacion", "proliferación", "citotoxicidad", "citoquina", "citocina", "degranulacion", "degranulación", "interferon", "interferón", "via del interferon", "functional", "assay", "assays"]
+    keywords: [
+      "funcional", "funcionales", "ensayo", "ensayos",
+      "proliferacion", "proliferaciones", "proliferación", "proliferar",
+      "citotoxicidad", "citotoxicidades", "citoquina", "citoquinas", "citocina", "citocinas",
+      "degranulacion", "degranulaciones", "degranulación", "interferon", "interferón", "via del interferon",
+      "functional", "assay", "assays", "proliferation", "proliferations"
+    ]
   },
   {
     id: "ecografia",

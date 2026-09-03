@@ -1168,8 +1168,16 @@ function splitTargets(typeId, targetText) {
   const type = STUDY_TYPES.find(t => t.id === typeId);
   if (type && type.fixed) return [targetText];
   
+  // Proteger combinaciones de marcadores unificados para no dividirlos en dos queries
+  let protectedText = targetText
+    .replace(/\b(cd16\s*[\/\+]\s*cd56|cd56\s*[\/\+]\s*cd16|cd16[\/\+]56|cd56[\/\+]16)\b/gi, "CD16/CD56")
+    .replace(/\b(cd19\s*[\/\+]\s*cd20|cd20\s*[\/\+]\s*cd19|cd19[\/\+]20|cd20[\/\+]19)\b/gi, "CD19/CD20")
+    .replace(/\b(cd3\s*[\/\+]\s*cd4|cd4\s*[\/\+]\s*cd3)\b/gi, "CD3/CD4")
+    .replace(/\b(cd3\s*[\/\+]\s*cd8|cd8\s*[\/\+]\s*cd3)\b/gi, "CD3/CD8")
+    .replace(/\b(cd4\s*[\/\+]\s*cd8|cd8\s*[\/\+]\s*cd4)\b/gi, "CD4/CD8");
+
   // Reemplazar conjunciones y separar por comas
-  let cleaned = targetText.replace(/\b(y|e|o)\b/gi, ",");
+  let cleaned = protectedText.replace(/\b(y|e|o|and|or)\b/gi, ",");
   let rawParts = cleaned.split(",");
   return rawParts
     .map(p => p.trim())
@@ -1230,7 +1238,7 @@ async function submitStudyDirect(type, subtype, target, rawQuery = "") {
 }
 
 /**
- * Búsqueda flexible de resultado.
+ * Búsqueda flexible de resultado con soporte para sinónimos de marcadores y ensayos.
  * Claves: "tipo::target" o "tipo::subtipo::target"
  */
 function findResult(c, typeId, subtypeId, target) {
@@ -1245,7 +1253,31 @@ function findResult(c, typeId, subtypeId, target) {
     return null;
   }
 
-  // Claves candidatas en orden de preferencia
+  // Grupos de sinónimos para Citometría de Flujo (CD19 == CD20 == Linfocitos B, CD16/CD56 == NK, etc.)
+  const flowSynonyms = [
+    {
+      group: "b-cells",
+      matches: ["cd19", "cd20", "cd19/cd20", "cd20/cd19", "linfocitos b", "linfocito b", "b cells", "b cell", "celulas b", "celula b", "b-cells", "b (cd19+)", "cd19+"]
+    },
+    {
+      group: "nk-cells",
+      matches: ["nk", "nk cells", "natural killer", "celulas nk", "células nk", "cd16", "cd56", "cd16/cd56", "cd56/cd16", "cd16/56", "cd56/16", "cd16+", "cd56+", "cd16+cd56+", "cd56+cd16+", "cd3-cd56+cd16+"]
+    },
+    {
+      group: "t-cells-cd3",
+      matches: ["cd3", "linfocitos t", "linfocito t", "t cells", "t cell", "celulas t", "cd3+", "linfocitos t (cd3+)"]
+    },
+    {
+      group: "t-cells-cd4",
+      matches: ["cd4", "t helper", "t cooperadores", "helper", "cooperadores", "cd4+", "linfocitos t cd4", "cd4 t cells", "linfocitos t cd4+"]
+    },
+    {
+      group: "t-cells-cd8",
+      matches: ["cd8", "t citotoxicos", "t citotóxicos", "citotoxicos", "citotóxicos", "cd8+", "linfocitos t cd8", "cd8 t cells", "linfocitos t cd8+"]
+    }
+  ];
+
+  // Búsqueda directa por claves candidatas
   const keyCandidates = subtypeId
     ? [`${typeId}::${subtypeId}::${target}`, `${typeId}::${target}`]
     : [`${typeId}::${target}`];
@@ -1269,8 +1301,27 @@ function findResult(c, typeId, subtypeId, target) {
     // Filtrar por subtipo si aplica
     if (subtypeId && kvSub && kvSub !== subtypeId) continue;
 
+    // 1. Coincidencia exacta o contenida normalizada
     if (kvTarget === nTarget) return value;
     if (nTarget && (kvTarget.includes(nTarget) || nTarget.includes(kvTarget))) return value;
+
+    // 2. Coincidencia por grupos de sinónimos de Citometría
+    if (typeId === "citometria") {
+      for (const syn of flowSynonyms) {
+        const targetInSyn = syn.matches.some(m => nTarget === normalize(m) || nTarget.includes(normalize(m)) || normalize(m).includes(nTarget));
+        const keyInSyn = syn.matches.some(m => kvTarget === normalize(m) || kvTarget.includes(normalize(m)) || normalize(m).includes(kvTarget));
+        if (targetInSyn && keyInSyn) {
+          return value;
+        }
+      }
+    }
+
+    // 3. Coincidencia flexible para proliferación / proliferaciones en ensayos funcionales
+    if (typeId === "funcional" && (subtypeId === "proliferacion" || kvSub === "proliferacion")) {
+      if (nTarget.includes("proliferac") || nTarget.includes("proliferat")) {
+        return value;
+      }
+    }
   }
 
   return null;
