@@ -211,33 +211,36 @@ const REGION_METADATA = {
   genetica: { label: "Segregación Genética", icon: "👥", color: "var(--accent-light)", onSilhouette: false }
 };
 
-function getAgeBracket(ageStr) {
+function getAgeBracket(ageStr, explicitBracket = null) {
+  if (explicitBracket && explicitBracket !== "auto" && ["baby", "child", "adult"].includes(explicitBracket)) {
+    return explicitBracket;
+  }
   if (!ageStr) return "adult";
   const s = ageStr.toLowerCase().trim();
   
   // Detección de neonatos, lactantes, meses, semanas o días
-  if (s.includes("mes") || s.includes("día") || s.includes("dia") || s.includes("semana") || s.includes("neonato") || s.includes("lactante") || s.includes("rn") || s.includes("recién") || s.includes("recien") || s.includes("bebé") || s.includes("bebe")) {
-    const matchMonths = s.match(/(\d+)\s*mes/);
+  if (s.includes("mes") || s.includes("month") || s.includes("día") || s.includes("dia") || s.includes("day") || s.includes("semana") || s.includes("week") || s.includes("neonato") || s.includes("lactante") || s.includes("infant") || s.includes("rn") || s.includes("recién") || s.includes("recien") || s.includes("bebé") || s.includes("bebe") || s.includes("baby")) {
+    const matchMonths = s.match(/(\d+(?:[.,]\d+)?)\s*(?:mes|month|m\b)/);
     if (matchMonths) {
-      const months = parseInt(matchMonths[1], 10);
+      const months = parseFloat(matchMonths[1].replace(',', '.'));
       if (months > 24) return "child";
     }
     return "baby";
   }
   
-  // Detección de años
-  const matchYears = s.match(/(\d+)\s*año/);
+  // Detección de años o números decimales/enteros con unidad de año (ej: "7.9 años", "7,9", "8 años", "0.6 años")
+  const matchYears = s.match(/(\d+(?:[.,]\d+)?)\s*(?:año|ano|year|yr|y\.?o\.?|y\b|a\b)/);
   if (matchYears) {
-    const years = parseInt(matchYears[1], 10);
+    const years = parseFloat(matchYears[1].replace(',', '.'));
     if (years < 2) return "baby";
     if (years <= 12) return "child";
     return "adult";
   }
   
-  // Número suelto
-  const matchNum = s.match(/\b(\d+)\b/);
+  // Número suelto (ej: "7.9", "0.6", "8", "24")
+  const matchNum = s.match(/(\d+(?:[.,]\d+)?)/);
   if (matchNum) {
-    const num = parseInt(matchNum[1], 10);
+    const num = parseFloat(matchNum[1].replace(',', '.'));
     if (num < 2) return "baby";
     if (num <= 12) return "child";
     return "adult";
@@ -427,7 +430,7 @@ function renderCaseInfoBanner(c) {
 
   // Detección de género y grupo etario
   const isFemale = p.gender && p.gender.toLowerCase() === "femenino";
-  const ageBracket = getAgeBracket(p.age);
+  const ageBracket = getAgeBracket(p.age, p.ageBracket || p.age_bracket);
 
   // Regla biométrica de altura médica (eje lateral izquierdo decorativo)
   const heightRuler = `

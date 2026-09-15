@@ -1007,15 +1007,27 @@ function buildCaseModal() {
       <div class="modal">
         <div class="modal-header"><h3>Nuevo Caso Clínico</h3><button class="modal-close" data-modal="case-modal">✕</button></div>
         <form id="case-form" onsubmit="addCase(event)">
-          <div class="form-group"><label>Nombre del caso</label><input type="text" id="case-name" required placeholder="Caso 4 — Paciente con..."></div>
+          <div class="form-group"><label>Nombre del caso</label><input type="text" id="case-name" required placeholder="Caso 5 — Paciente con..."></div>
           <div class="form-group"><label>Mensaje de bienvenida / Motivo de consulta (visible para estudiantes)</label><textarea id="case-desc" rows="3" required placeholder="Ej: Hola doctor, me han recomendado mucho que me atienda con usted..."></textarea></div>
-          <div class="form-group"><label>Edad del paciente</label><input type="text" id="case-age" placeholder="Ej: 8 años, 24 años..."></div>
+          <div class="form-group"><label>Edad del paciente</label><input type="text" id="case-age" placeholder="Ej: 7.9 años, 8 años, 18 meses, 24 años..."></div>
           <div class="form-group"><label>Género</label>
             <select id="case-gender">
               <option value="Masculino">Masculino</option>
               <option value="Femenino">Femenino</option>
               <option value="No especificado">No especificado</option>
             </select>
+          </div>
+          <div class="form-group">
+            <label>Silueta y Proporción Corporal (Altura según edad)</label>
+            <select id="case-age-bracket">
+              <option value="auto">🤖 Automático (detectar según la edad ingresada)</option>
+              <option value="baby">👶 Lactante / Bebé (&lt; 2 años)</option>
+              <option value="child">🧒 Pediátrico / Infantil (2 a 12 años)</option>
+              <option value="adult">🧑 Adolescente / Adulto (&gt; 12 años)</option>
+            </select>
+            <span class="form-hint" style="font-size:0.75rem; color:var(--text-muted); display:block; margin-top:0.2rem;">
+              Ajusta el tamaño y proporciones de la figura anatómica en el examen del alumno.
+            </span>
           </div>
           <div class="form-group"><label>Inicio de síntomas</label><input type="text" id="case-onset" placeholder="Ej: Desde los 6 meses de vida, 4 meses de evolución..."></div>
           <div class="form-group" style="margin-top:0.75rem;">
@@ -1058,7 +1070,7 @@ function buildPatientModal() {
           <h4 style="margin: 1.25rem 0 0.75rem 0; font-size: 0.85rem; text-transform: uppercase; color: var(--primary-light); letter-spacing: 0.05em; border-bottom: 1px dashed var(--border); padding-bottom: 0.25rem;">Ficha Demográfica del Paciente</h4>
           <div class="form-group">
             <label>Edad</label>
-            <input type="text" id="patient-age" required placeholder="Ej: 8 años, 18 meses...">
+            <input type="text" id="patient-age" required placeholder="Ej: 8 años, 7.9 años, 18 meses...">
           </div>
           <div class="form-group">
             <label>Género</label>
@@ -1067,6 +1079,18 @@ function buildPatientModal() {
               <option value="Femenino">Femenino</option>
               <option value="No especificado">No especificado</option>
             </select>
+          </div>
+          <div class="form-group">
+            <label>Silueta y Proporción Corporal (Altura según edad)</label>
+            <select id="patient-age-bracket">
+              <option value="auto">🤖 Automático (detectar según la edad ingresada)</option>
+              <option value="baby">👶 Lactante / Bebé (&lt; 2 años)</option>
+              <option value="child">🧒 Pediátrico / Infantil (2 a 12 años)</option>
+              <option value="adult">🧑 Adolescente / Adulto (&gt; 12 años)</option>
+            </select>
+            <span class="form-hint" style="font-size:0.75rem; color:var(--text-muted); display:block; margin-top:0.2rem;">
+              Ajusta el tamaño y proporciones de la figura anatómica en el examen del alumno.
+            </span>
           </div>
           <div class="form-group">
             <label>Inicio de síntomas</label>
@@ -1164,6 +1188,7 @@ function openPatientModal(caseId) {
   document.getElementById("patient-internal-notes").value = c.internal_notes || "";
   document.getElementById("patient-age").value = c.patient?.age || "";
   document.getElementById("patient-gender").value = c.patient?.gender || "Masculino";
+  document.getElementById("patient-age-bracket").value = c.patient?.ageBracket || c.patient?.age_bracket || "auto";
   document.getElementById("patient-onset").value = c.patient?.symptomOnset || "";
   document.getElementById("patient-modal").classList.add("open");
 }
@@ -1177,11 +1202,16 @@ async function savePatientData(e) {
   const name = document.getElementById("patient-case-name").value.trim();
   const description = document.getElementById("patient-case-desc").value.trim();
   const internal_notes = document.getElementById("patient-internal-notes").value.trim();
+  const age = document.getElementById("patient-age").value.trim();
+  const gender = document.getElementById("patient-gender").value;
+  const ageBracket = document.getElementById("patient-age-bracket").value;
+  const onset = document.getElementById("patient-onset").value.trim();
 
   const patient = {
-    age: document.getElementById("patient-age").value.trim(),
-    gender: document.getElementById("patient-gender").value,
-    symptomOnset: document.getElementById("patient-onset").value.trim()
+    age,
+    gender,
+    ageBracket,
+    symptomOnset: onset
   };
 
   // Actualizar también el resultado de info-paciente si no existe o actualizarlo
@@ -1244,6 +1274,7 @@ async function addCase(e) {
   const desc = document.getElementById("case-desc").value.trim();
   const age = document.getElementById("case-age").value.trim() || "—";
   const gender = document.getElementById("case-gender").value;
+  const ageBracket = document.getElementById("case-age-bracket")?.value || "auto";
   const onset = document.getElementById("case-onset").value.trim() || "—";
   const shouldPreload = document.getElementById("case-preload-categories")?.checked !== false;
 
@@ -1265,7 +1296,7 @@ async function addCase(e) {
         name,
         description: desc,
         status: "draft",
-        patient: { age, gender, symptomOnset: onset },
+        patient: { age, gender, ageBracket, symptomOnset: onset },
         results: initialResults
       });
 
