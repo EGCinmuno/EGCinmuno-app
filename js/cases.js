@@ -10,3 +10,4 @@ document.write('<script src="cases/caso-01.js"></script>');
 document.write('<script src="cases/caso-02.js"></script>');
 document.write('<script src="cases/caso-03.js"></script>');
 document.write('<script src="cases/caso-04.js"></script>');
+document.write('<script src="cases/caso-05.js"></script>');

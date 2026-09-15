@@ -468,21 +468,49 @@ function renderCaseInfoBanner(c) {
     `;
   } else if (ageBracket === "child") {
     // 🧒 SILUETA PEDIÁTRICA / INFANTIL (2 - 12 AÑOS)
-    silhouetteSVG = `
-      <!-- Cabeza infantil -->
-      <circle cx="50" cy="45" r="11" fill="rgba(99, 102, 241, 0.04)" stroke="var(--border-active)" stroke-width="1.5" />
-      <!-- Cuello -->
-      <line x1="50" y1="56" x2="50" y2="63" stroke="var(--border-active)" stroke-width="1.5" />
-      <!-- Clavícula -->
-      <line x1="36" y1="63" x2="64" y2="63" stroke="var(--border-active)" stroke-width="1.5" stroke-linecap="round" />
-      <!-- Torso pediátrico -->
-      <path d="M36 63 L64 63 L61 90 L61 118 L39 118 L39 90 Z" fill="rgba(99, 102, 241, 0.03)" stroke="var(--border-active)" stroke-width="1.5" stroke-linejoin="round" />
-      <!-- Brazos -->
-      <line x1="36" y1="63" x2="24" y2="108" stroke="var(--border-active)" stroke-width="1.5" stroke-linecap="round" />
-      <line x1="64" y1="63" x2="76" y2="108" stroke="var(--border-active)" stroke-width="1.5" stroke-linecap="round" />
-      <!-- Piernas -->
-      <line x1="43" y1="118" x2="41" y2="185" stroke="var(--border-active)" stroke-width="1.5" stroke-linecap="round" />
-      <line x1="57" y1="118" x2="59" y2="185" stroke="var(--border-active)" stroke-width="1.5" stroke-linecap="round" />
+    const childHead = isFemale
+      ? `
+        <!-- Cabeza infantil femenina con coletas sutiles -->
+        <circle cx="50" cy="45" r="11" fill="rgba(99, 102, 241, 0.04)" stroke="var(--border-active)" stroke-width="1.5" />
+        <path d="M39 43 C34 40, 31 46, 34 52" fill="none" stroke="var(--border-active)" stroke-width="1.2" stroke-linecap="round" />
+        <path d="M61 43 C66 40, 69 46, 66 52" fill="none" stroke="var(--border-active)" stroke-width="1.2" stroke-linecap="round" />
+      `
+      : `
+        <!-- Cabeza infantil masculina -->
+        <circle cx="50" cy="45" r="11" fill="rgba(99, 102, 241, 0.04)" stroke="var(--border-active)" stroke-width="1.5" />
+      `;
+
+    const childBody = isFemale
+      ? `
+        <!-- Cuello -->
+        <line x1="50" y1="56" x2="50" y2="63" stroke="var(--border-active)" stroke-width="1.5" />
+        <!-- Clavícula -->
+        <line x1="37" y1="63" x2="63" y2="63" stroke="var(--border-active)" stroke-width="1.5" stroke-linecap="round" />
+        <!-- Torso pediátrico femenino (contorno sutil acampanado) -->
+        <path d="M37 63 L63 63 L59 88 L65 118 L35 118 L41 88 Z" fill="rgba(99, 102, 241, 0.03)" stroke="var(--border-active)" stroke-width="1.5" stroke-linejoin="round" />
+        <!-- Brazos -->
+        <line x1="37" y1="63" x2="25" y2="108" stroke="var(--border-active)" stroke-width="1.5" stroke-linecap="round" />
+        <line x1="63" y1="63" x2="75" y2="108" stroke="var(--border-active)" stroke-width="1.5" stroke-linecap="round" />
+        <!-- Piernas -->
+        <line x1="43" y1="118" x2="41" y2="185" stroke="var(--border-active)" stroke-width="1.5" stroke-linecap="round" />
+        <line x1="57" y1="118" x2="59" y2="185" stroke="var(--border-active)" stroke-width="1.5" stroke-linecap="round" />
+      `
+      : `
+        <!-- Cuello -->
+        <line x1="50" y1="56" x2="50" y2="63" stroke="var(--border-active)" stroke-width="1.5" />
+        <!-- Clavícula -->
+        <line x1="36" y1="63" x2="64" y2="63" stroke="var(--border-active)" stroke-width="1.5" stroke-linecap="round" />
+        <!-- Torso pediátrico masculino -->
+        <path d="M36 63 L64 63 L61 90 L61 118 L39 118 L39 90 Z" fill="rgba(99, 102, 241, 0.03)" stroke="var(--border-active)" stroke-width="1.5" stroke-linejoin="round" />
+        <!-- Brazos -->
+        <line x1="36" y1="63" x2="24" y2="108" stroke="var(--border-active)" stroke-width="1.5" stroke-linecap="round" />
+        <line x1="64" y1="63" x2="76" y2="108" stroke="var(--border-active)" stroke-width="1.5" stroke-linecap="round" />
+        <!-- Piernas -->
+        <line x1="43" y1="118" x2="41" y2="185" stroke="var(--border-active)" stroke-width="1.5" stroke-linecap="round" />
+        <line x1="57" y1="118" x2="59" y2="185" stroke="var(--border-active)" stroke-width="1.5" stroke-linecap="round" />
+      `;
+
+    silhouetteSVG = childHead + childBody + `
       <!-- Guía de suelo -->
       <line x1="25" y1="188" x2="75" y2="188" stroke="rgba(99, 102, 241, 0.15)" stroke-width="1" stroke-dasharray="2,2" />
     `;

@@ -740,9 +740,12 @@ function renderSelectedCaseDetail() {
         <p style="margin:0.25rem 0 0 0; font-size:0.85rem; color:var(--text-secondary);">${c.description || 'Sin descripción clínica.'}</p>
       </div>
       
-      <div class="btn-group" style="display:flex; gap:0.4rem;">
+      <div class="btn-group" style="display:flex; gap:0.4rem; flex-wrap:wrap;">
         <button class="btn-status-toggle ${isPublished ? 'toggle-unpublish' : 'toggle-publish'}" onclick="toggleCaseStatus('${c.id}')" style="font-size:0.78rem; padding:0.4rem 0.8rem; border-radius: var(--radius-md);">
           ${isPublished ? '⏸ Borrador' : '▶ Publicar'}
+        </button>
+        <button class="btn-admin-secondary" onclick="exportCaseToLocalJS('${c.id}')" style="font-size:0.78rem; padding:0.4rem 0.8rem; border-radius: var(--radius-md);" title="Generar archivo .js para guardar en la carpeta cases/">
+          💾 Exportar JS Local
         </button>
         <button class="btn-admin-secondary danger" onclick="deleteCase('${c.id}')" style="font-size:0.78rem; padding:0.4rem 0.8rem; border-radius: var(--radius-md);">
           🗑 Borrar Caso
@@ -999,6 +1002,33 @@ async function syncLocalCasesToSupabase() {
   const content = document.getElementById("admin-content");
   renderCasesTab(content);
   showAdminToast(`Sincronización completa: ${count} casos importados.`);
+}
+
+function exportCaseToLocalJS(caseId) {
+  const c = dbCases.find(x => x.id === caseId);
+  if (!c) return;
+  const jsContent = `if (!window.EGC_CASES) window.EGC_CASES = [];\n\nwindow.EGC_CASES.push(${JSON.stringify({
+    id: c.id,
+    name: c.name,
+    description: c.description || "",
+    internal_notes: c.internal_notes || "",
+    status: c.status || "published",
+    patient: c.patient || {},
+    results: c.results || {}
+  }, null, 2)});\n`;
+
+  // Copiar al portapapeles y descargar archivo
+  navigator.clipboard.writeText(jsContent).then(() => {
+    showAdminToast("¡Código JS copiado al portapapeles! Listo para pegar en cases/");
+  }).catch(() => {
+    showAdminToast("Código JS generado");
+  });
+
+  const blob = new Blob([jsContent], { type: "text/javascript;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `${c.id}.js`;
+  a.click();
 }
 
 async function toggleCaseStatus(caseId) {
