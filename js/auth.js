@@ -37,6 +37,28 @@ let cachedTokensLimit = 15;
 let cachedQueryMode = "both";
 let cachedShowBanner = true;
 let cachedBannerLogos = ["egc.png", "lasid.png", "Logo_exactas.svg"];
+let cachedCasesOrder = [];
+
+try {
+  const localOrder = localStorage.getItem("egc_cases_order");
+  if (localOrder) cachedCasesOrder = JSON.parse(localOrder);
+} catch (e) {
+  cachedCasesOrder = [];
+}
+
+function sortCasesByOrder(casesList, orderArray) {
+  if (!casesList || !Array.isArray(casesList)) return [];
+  const order = (orderArray && orderArray.length > 0) ? orderArray : cachedCasesOrder;
+  if (!order || order.length === 0) return casesList;
+  return [...casesList].sort((a, b) => {
+    let idxA = order.indexOf(a.id);
+    let idxB = order.indexOf(b.id);
+    if (idxA === -1) idxA = 9999;
+    if (idxB === -1) idxB = 9999;
+    if (idxA !== idxB) return idxA - idxB;
+    return (a.name || "").localeCompare(b.name || "");
+  });
+}
 
 async function fetchSystemSettings() {
   try {
@@ -48,6 +70,7 @@ async function fetchSystemSettings() {
       const modeRow = data.find(r => r.key === 'query_mode');
       const showBannerRow = data.find(r => r.key === 'show_banner');
       const bannerLogosRow = data.find(r => r.key === 'banner_logos');
+      const casesOrderRow = data.find(r => r.key === 'cases_order');
 
       if (tokensRow) cachedTokensLimit = parseInt(tokensRow.value, 10) || 15;
       if (modeRow) cachedQueryMode = modeRow.value || "both";
@@ -60,6 +83,15 @@ async function fetchSystemSettings() {
         }
       } else {
         cachedBannerLogos = ["egc.png", "lasid.png", "Logo_exactas.svg"];
+      }
+
+      if (casesOrderRow) {
+        try {
+          cachedCasesOrder = JSON.parse(casesOrderRow.value);
+          localStorage.setItem("egc_cases_order", casesOrderRow.value);
+        } catch (e) {
+          console.warn("Error parseando cases_order:", e);
+        }
       }
     }
   } catch (err) {

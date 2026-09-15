@@ -9,13 +9,12 @@ async function refreshAdminData() {
 
     const { data: csData, error: csErr } = await supabaseClient
       .from('cases')
-      .select('*')
-      .order('id', { ascending: true });
+      .select('*');
 
     if (csErr) {
       console.error("Error al obtener casos de Supabase:", csErr);
     } else if (csData) {
-      dbCases = csData.map(c => ({
+      const mapped = csData.map(c => ({
         id: c.id,
         name: c.name,
         description: c.description || "",
@@ -25,8 +24,10 @@ async function refreshAdminData() {
         internal_notes: c.internal_notes || ""
       }));
 
-      // Auto-seleccionar primer caso si es null
-      if (!selectedCaseId && dbCases.length > 0) {
+      dbCases = typeof sortCasesByOrder === "function" ? sortCasesByOrder(mapped, cachedCasesOrder) : mapped;
+
+      // Auto-seleccionar primer caso si es null o ya no existe
+      if ((!selectedCaseId || !dbCases.some(x => x.id === selectedCaseId)) && dbCases.length > 0) {
         selectedCaseId = dbCases[0].id;
       }
     }
@@ -480,31 +481,50 @@ function renderCasesTab(container) {
   container.innerHTML = `
     <div class="admin-section">
       <div class="admin-section-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
-        <h2>Gestión de Casos Clínicos</h2>
+        <div>
+          <h2>Gestión de Casos Clínicos</h2>
+          <p style="font-size:0.8rem; color:var(--text-secondary); margin-top:0.2rem;">
+            Podés reordenar los casos con las flechas ▲ y ▼. El orden se reflejará en la pantalla del examen.
+          </p>
+        </div>
         <button class="btn-admin-primary" onclick="openCaseModal()">+ Nuevo Caso</button>
       </div>
       
-      <div class="admin-cases-layout" style="display: grid; grid-template-columns: 280px 1fr; gap: 1.5rem; align-items: start; margin-top: 1rem;">
+      <div class="admin-cases-layout" style="display: grid; grid-template-columns: 300px 1fr; gap: 1.5rem; align-items: start; margin-top: 1rem;">
         <!-- Left Sidebar: Cases List -->
         <div class="admin-cases-sidebar" style="background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem;">
-          <h3 style="font-size: 0.75rem; font-weight: 700; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.25rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
-            Casos Clínicos
-          </h3>
+          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
+            <h3 style="font-size: 0.75rem; font-weight: 700; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.08em; margin: 0;">
+              Casos Clínicos (${dbCases.length})
+            </h3>
+            <span style="font-size:0.7rem; color:var(--text-muted); font-weight:500;">↕ Reordenar</span>
+          </div>
           <div style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 480px; overflow-y: auto; padding-right: 0.25rem;">
             ${dbCases.length === 0
       ? `<p class="empty-msg" style="font-size:0.78rem; text-align:center;">No hay casos. Clic en "+ Nuevo Caso" para crear uno.</p>`
-      : dbCases.map(c => {
+      : dbCases.map((c, index) => {
         const isSelected = c.id === selectedCaseId;
         const isPub = c.status === "published";
+        const isFirst = index === 0;
+        const isLast = index === dbCases.length - 1;
         return `
-                    <div onclick="selectAdminCase('${c.id}')" style="padding: 0.65rem 0.75rem; border-radius: var(--radius-md); border: 1px solid ${isSelected ? 'var(--primary)' : 'var(--border)'}; background: ${isSelected ? 'var(--primary-glow)' : 'transparent'}; cursor: pointer; transition: all var(--transition); display:flex; flex-direction:column; gap:0.2rem;">
-                      <div style="display:flex; justify-content:space-between; align-items:center; gap: 0.25rem;">
-                        <span style="font-weight:600; font-size:0.82rem; color:${isSelected ? 'var(--primary-light)' : 'var(--text-primary)'}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                          ${c.name} ${c.internal_notes ? `<span style="font-weight:normal; font-size:0.75rem; color:var(--text-muted); font-style:italic;">(${c.internal_notes})</span>` : ""}
-                        </span>
-                        <span style="font-size:0.6rem; padding:0.1rem 0.35rem; border-radius:1rem; font-weight:700; background:${isPub ? 'rgba(16,185,129,0.1)' : 'rgba(255,255,255,0.05)'}; color:${isPub ? 'var(--success)' : 'var(--text-muted)'}; flex-shrink:0;">
-                          ${isPub ? 'Activo' : 'Borrador'}
-                        </span>
+                    <div onclick="selectAdminCase('${c.id}')" style="padding: 0.65rem 0.75rem; border-radius: var(--radius-md); border: 1px solid ${isSelected ? 'var(--primary)' : 'var(--border)'}; background: ${isSelected ? 'var(--primary-glow)' : 'transparent'}; cursor: pointer; transition: all var(--transition); display:flex; flex-direction:column; gap:0.25rem;">
+                      <div style="display:flex; justify-content:space-between; align-items:center; gap: 0.35rem;">
+                        <div style="display:flex; align-items:center; gap:0.4rem; min-width:0; flex:1;">
+                          <span style="font-size:0.68rem; font-weight:700; color:var(--text-muted); background:rgba(255,255,255,0.06); border:1px solid var(--border); padding:0.1rem 0.35rem; border-radius:4px; flex-shrink:0;">#${index + 1}</span>
+                          <span style="font-weight:600; font-size:0.82rem; color:${isSelected ? 'var(--primary-light)' : 'var(--text-primary)'}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${c.name}">
+                            ${c.name} ${c.internal_notes ? `<span style="font-weight:normal; font-size:0.75rem; color:var(--text-muted); font-style:italic;">(${c.internal_notes})</span>` : ""}
+                          </span>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:0.35rem; flex-shrink:0;">
+                          <span style="font-size:0.58rem; padding:0.1rem 0.35rem; border-radius:1rem; font-weight:700; background:${isPub ? 'rgba(16,185,129,0.1)' : 'rgba(255,255,255,0.05)'}; color:${isPub ? 'var(--success)' : 'var(--text-muted)'};">
+                            ${isPub ? 'Activo' : 'Borrador'}
+                          </span>
+                          <div style="display:inline-flex; flex-direction:column; gap:2px;" onclick="event.stopPropagation()">
+                            <button class="btn-case-order" title="Subir orden" onclick="moveCaseUp('${c.id}', event)" ${isFirst ? 'disabled style="opacity:0.25; cursor:not-allowed;"' : ''}>▲</button>
+                            <button class="btn-case-order" title="Bajar orden" onclick="moveCaseDown('${c.id}', event)" ${isLast ? 'disabled style="opacity:0.25; cursor:not-allowed;"' : ''}>▼</button>
+                          </div>
+                        </div>
                       </div>
                     </div>`;
       }).join("")}
@@ -533,6 +553,54 @@ function selectAdminCase(id) {
   selectedCaseId = id;
   const content = document.getElementById("admin-content");
   renderCasesTab(content);
+}
+
+async function moveCaseUp(caseId, event) {
+  if (event) event.stopPropagation();
+  const idx = dbCases.findIndex(c => c.id === caseId);
+  if (idx <= 0) return;
+  const temp = dbCases[idx];
+  dbCases[idx] = dbCases[idx - 1];
+  dbCases[idx - 1] = temp;
+
+  const content = document.getElementById("admin-content");
+  renderCasesTab(content);
+
+  await saveCasesOrder();
+}
+
+async function moveCaseDown(caseId, event) {
+  if (event) event.stopPropagation();
+  const idx = dbCases.findIndex(c => c.id === caseId);
+  if (idx === -1 || idx >= dbCases.length - 1) return;
+  const temp = dbCases[idx];
+  dbCases[idx] = dbCases[idx + 1];
+  dbCases[idx + 1] = temp;
+
+  const content = document.getElementById("admin-content");
+  renderCasesTab(content);
+
+  await saveCasesOrder();
+}
+
+async function saveCasesOrder() {
+  const orderList = dbCases.map(c => c.id);
+  cachedCasesOrder = orderList;
+  localStorage.setItem("egc_cases_order", JSON.stringify(orderList));
+
+  try {
+    const { error } = await supabaseClient
+      .from('settings')
+      .upsert({ key: 'cases_order', value: JSON.stringify(orderList) });
+
+    if (error) {
+      console.warn("No se pudo guardar cases_order en Supabase:", error);
+    } else {
+      showAdminToast("Orden de casos guardado");
+    }
+  } catch (err) {
+    console.warn("Excepción al guardar cases_order en Supabase:", err);
+  }
 }
 
 // ──────────────────────────────────────────────
@@ -618,6 +686,7 @@ function renderSelectedCaseDetail() {
   }
 
   const isPublished = c.status === "published";
+  const caseIdx = dbCases.findIndex(x => x.id === c.id);
   const patientInfo = c.patient && (c.patient.age || c.patient.gender || c.patient.symptomOnset)
     ? `🧑‍⚕️ <strong>Edad:</strong> ${c.patient.age || '—'} &nbsp;&nbsp;|&nbsp;&nbsp; <strong>Género:</strong> ${c.patient.gender || '—'} &nbsp;&nbsp;|&nbsp;&nbsp; <strong>Inicio de síntomas:</strong> ${c.patient.symptomOnset || '—'}`
     : "Sin datos demográficos.";
@@ -649,10 +718,13 @@ function renderSelectedCaseDetail() {
     <!-- Case Header -->
     <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:1px solid var(--border); padding-bottom:1rem; flex-wrap:wrap; gap:1rem;">
       <div style="flex: 1; min-width: 200px;">
-        <h2 style="font-size:1.25rem; margin:0; display:flex; align-items:center; gap:0.5rem; color:var(--text-primary);">
+        <h2 style="font-size:1.25rem; margin:0; display:flex; align-items:center; gap:0.5rem; color:var(--text-primary); flex-wrap:wrap;">
           ${c.name}
           <span style="font-size:0.7rem; font-weight:700; padding:0.15rem 0.45rem; border-radius:1rem; background:${isPublished ? 'rgba(16,185,129,0.1)' : 'rgba(255,255,255,0.05)'}; color:${isPublished ? 'var(--success)' : 'var(--text-muted)'};">
             ${isPublished ? '🟢 Publicado' : '⚪ Borrador'}
+          </span>
+          <span style="font-size:0.7rem; font-weight:600; padding:0.15rem 0.45rem; border-radius:1rem; background:rgba(255,255,255,0.05); color:var(--text-muted); border:1px solid var(--border);">
+            Posición #${caseIdx + 1} de ${dbCases.length}
           </span>
         </h2>
         <p style="margin:0.25rem 0 0 0; font-size:0.85rem; color:var(--text-secondary);">${c.description || 'Sin descripción clínica.'}</p>
@@ -1201,6 +1273,10 @@ async function addCase(e) {
 
     document.getElementById("case-modal").classList.remove("open");
     selectedCaseId = id; // Auto-select the newly created case
+    if (!cachedCasesOrder.includes(id)) {
+      cachedCasesOrder.push(id);
+    }
+    await saveCasesOrder();
     await refreshAdminData();
     const content = document.getElementById("admin-content");
     renderCasesTab(content);
@@ -1293,6 +1369,8 @@ async function deleteCase(caseId) {
     if (error) throw error;
 
     selectedCaseId = null; // Clear selection
+    cachedCasesOrder = cachedCasesOrder.filter(x => x !== caseId);
+    await saveCasesOrder();
     await refreshAdminData();
     const content = document.getElementById("admin-content");
     renderCasesTab(content);

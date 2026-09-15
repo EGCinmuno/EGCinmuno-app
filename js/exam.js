@@ -56,13 +56,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     const { data: csData, error: csErr } = await supabaseClient
       .from('cases')
       .select('*')
-      .eq('status', 'published')
-      .order('id', { ascending: true });
+      .eq('status', 'published');
 
     if (csErr) {
       console.error("Error al obtener casos de Supabase:", csErr);
     } else if (csData && csData.length > 0) {
-      examCases = csData.map(c => ({
+      const mapped = csData.map(c => ({
         id: c.id,
         name: c.name,
         description: c.description || "",
@@ -70,6 +69,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         patient: c.patient || {},
         results: c.results || {}
       }));
+      examCases = typeof sortCasesByOrder === "function" ? sortCasesByOrder(mapped, cachedCasesOrder) : mapped;
     }
   } catch (err) {
     console.error("Excepción al cargar casos de Supabase:", err);
@@ -78,7 +78,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Fallback si no hay casos en Supabase
   if (examCases.length === 0) {
     const data = getData();
-    examCases = (data.cases || []).filter(c => c.status === "published");
+    const fallback = (data.cases || []).filter(c => c.status === "published");
+    examCases = typeof sortCasesByOrder === "function" ? sortCasesByOrder(fallback, cachedCasesOrder) : fallback;
   }
 
   queryMode = cachedQueryMode;

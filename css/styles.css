@@ -1318,6 +1318,33 @@ code, pre {
   border-color: rgba(239, 68, 68, 0.4);
 }
 
+.btn-case-order {
+  padding: 1px 4px;
+  font-size: 0.58rem;
+  line-height: 1;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-case-order:hover:not(:disabled) {
+  background: var(--primary);
+  border-color: var(--primary-light);
+  color: white;
+  transform: scale(1.1);
+}
+
+.btn-case-order:disabled {
+  opacity: 0.2;
+  cursor: not-allowed;
+}
+
 .btn-icon-sm.danger:hover {
   background: rgba(239, 68, 68, 0.15);
   border-color: var(--danger);
