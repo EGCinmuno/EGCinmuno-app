@@ -687,6 +687,16 @@ function renderSelectedCaseDetail() {
 
   const isPublished = c.status === "published";
   const caseIdx = dbCases.findIndex(x => x.id === c.id);
+  const ageBracket = typeof getAgeBracket === "function"
+    ? getAgeBracket(c.patient?.age, c.patient?.ageBracket || c.patient?.age_bracket)
+    : "adult";
+
+  const bracketMeta = {
+    baby: { label: "Lactante / Bebé (< 2 años)", icon: "👶", color: "#f59e0b" },
+    child: { label: "Pediátrico / Infantil (2 a 12 años)", icon: "🧒", color: "#10b981" },
+    adult: { label: "Adolescente / Adulto (> 12 años)", icon: "🧑", color: "#818cf8" }
+  }[ageBracket] || { label: "Adulto", icon: "🧑", color: "#818cf8" };
+
   const patientInfo = c.patient && (c.patient.age || c.patient.gender || c.patient.symptomOnset)
     ? `🧑‍⚕️ <strong>Edad:</strong> ${c.patient.age || '—'} &nbsp;&nbsp;|&nbsp;&nbsp; <strong>Género:</strong> ${c.patient.gender || '—'} &nbsp;&nbsp;|&nbsp;&nbsp; <strong>Inicio de síntomas:</strong> ${c.patient.symptomOnset || '—'}`
     : "Sin datos demográficos.";
@@ -740,10 +750,23 @@ function renderSelectedCaseDetail() {
       </div>
     </div>
 
+    ${!isPublished ? `
+      <div style="background:rgba(245, 158, 11, 0.08); border:1px solid rgba(245, 158, 11, 0.25); border-radius:var(--radius-md); padding:0.65rem 0.9rem; font-size:0.78rem; color:#fbbf24; display:flex; align-items:center; gap:0.5rem;">
+        <span>ℹ️</span>
+        <span>Este caso está actualmente en <strong>Borrador</strong> (oculto para alumnos). Para habilitarlo en la pantalla de examen, hacé clic en el botón <strong>▶ Publicar</strong> arriba.</span>
+      </div>
+    ` : ''}
+
     <!-- Patient Info Card -->
     <div style="background:rgba(255,255,255,0.015); border:1px solid var(--border); border-radius:var(--radius-md); padding:0.85rem 1rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
-      <div style="font-size:0.85rem; color:var(--text-primary);">
-        ${patientInfo}
+      <div style="font-size:0.85rem; color:var(--text-primary); display:flex; flex-direction:column; gap:0.35rem;">
+        <div>${patientInfo}</div>
+        <div style="font-size:0.75rem; color:var(--text-muted); display:flex; align-items:center; gap:0.4rem;">
+          <span>📐 <strong>Silueta anatómica:</strong></span>
+          <span style="display:inline-flex; align-items:center; gap:0.25rem; padding:0.1rem 0.45rem; border-radius:1rem; background:rgba(255,255,255,0.05); border:1px solid var(--border); color:${bracketMeta.color}; font-weight:600;">
+            ${bracketMeta.icon} ${bracketMeta.label}
+          </span>
+        </div>
       </div>
       <button class="btn-admin-secondary" onclick="openPatientModal('${c.id}')" style="font-size:0.78rem; padding:0.4rem 0.75rem;">
         ✏️ Editar Ficha
