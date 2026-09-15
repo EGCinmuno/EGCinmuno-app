@@ -529,9 +529,16 @@ function renderCasesTab(container) {
                     </div>`;
       }).join("")}
           </div>
-          <button class="btn-admin-secondary" onclick="syncLocalCasesToSupabase()" style="margin-top:0.5rem; font-size:0.78rem; width:100%; padding: 0.4rem 0.5rem;">
-            🔄 Importar Locales
-          </button>
+          <div style="display:flex; flex-direction:column; gap:0.4rem; margin-top:0.5rem; border-top:1px solid var(--border); padding-top:0.6rem;">
+            <button class="btn-admin-primary" onclick="triggerImportCaseFile()" style="font-size:0.78rem; width:100%; padding: 0.45rem 0.5rem; display:flex; align-items:center; justify-content:center; gap:0.35rem;" title="Cargar un archivo .js o .json generado previamente">
+              📥 Importar Archivo JS
+            </button>
+            <input type="file" id="import-case-file-input" accept=".js,.json" style="display:none;" onchange="handleImportCaseFile(event)">
+            
+            <button class="btn-admin-secondary" onclick="syncLocalCasesToSupabase()" style="font-size:0.72rem; width:100%; padding: 0.35rem 0.5rem; opacity:0.85;" title="Sube a Supabase todos los casos declarados en la carpeta cases/ (no borra casos existentes)">
+              🔄 Sincronizar carpeta /cases
+            </button>
+          </div>
         </div>
         
         <!-- Right Panel: Selected Case Detail Editor -->
@@ -1029,6 +1036,80 @@ function exportCaseToLocalJS(caseId) {
   a.href = URL.createObjectURL(blob);
   a.download = `${c.id}.js`;
   a.click();
+}
+
+function triggerImportCaseFile() {
+  const input = document.getElementById("import-case-file-input");
+  if (input) {
+    input.value = "";
+    input.click();
+  }
+}
+
+async function handleImportCaseFile(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    const content = e.target.result;
+    try {
+      let caseObj = null;
+
+      if (content.trim().startsWith("{")) {
+        caseObj = JSON.parse(content);
+      } else {
+        const pushMatch = content.match(/window\.EGC_CASES\.push\(\s*(\{[\s\S]*\})\s*\);?/);
+        if (pushMatch) {
+          caseObj = Function(`"use strict"; return (${pushMatch[1]});`)();
+        } else {
+          const firstBrace = content.indexOf('{');
+          const lastBrace = content.lastIndexOf('}');
+          if (firstBrace !== -1 && lastBrace !== -1) {
+            const raw = content.substring(firstBrace, lastBrace + 1);
+            caseObj = Function(`"use strict"; return (${raw});`)();
+          }
+        }
+      }
+
+      if (!caseObj || !caseObj.name) {
+        throw new Error("El archivo no contiene un objeto de caso clínico válido con propiedad 'name'.");
+      }
+
+      showAdminToast(`Importando ${caseObj.name}...`);
+
+      const caseToSave = {
+        id: caseObj.id || ("caso-" + Date.now()),
+        name: caseObj.name,
+        description: caseObj.description || "",
+        internal_notes: caseObj.internal_notes || "",
+        status: caseObj.status || "published",
+        patient: caseObj.patient || {},
+        results: caseObj.results || {}
+      };
+
+      const { error } = await supabaseClient
+        .from('cases')
+        .upsert(caseToSave);
+
+      if (error) throw error;
+
+      selectedCaseId = caseToSave.id;
+      if (!cachedCasesOrder.includes(caseToSave.id)) {
+        cachedCasesOrder.push(caseToSave.id);
+        await saveCasesOrder();
+      }
+
+      await refreshAdminData();
+      const adminContent = document.getElementById("admin-content");
+      renderCasesTab(adminContent);
+      showAdminToast(`¡Caso "${caseToSave.name}" importado exitosamente desde archivo!`);
+    } catch (err) {
+      console.error("Error al importar caso desde archivo:", err);
+      showAdminToast("Error al importar archivo: " + err.message, "error");
+    }
+  };
+  reader.readAsText(file);
 }
 
 async function toggleCaseStatus(caseId) {
